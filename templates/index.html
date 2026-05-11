@@ -1,101 +1,630 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Bharat Estate AI | Elite Edition</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <style>
-        :root { --p: #6366f1; --s: #10b981; --bg: #0b0f1a; }
-        body { margin:0; font-family:'Inter',sans-serif; background:var(--bg); color:white; display:flex; justify-content:center; padding:30px; }
-        .container { display:grid; grid-template-columns: 380px 1fr; gap:25px; width:100%; max-width:1250px; }
-        .card { background:rgba(255,255,255,0.03); backdrop-filter:blur(15px); border:1px solid rgba(255,255,255,0.1); border-radius:24px; padding:25px; box-shadow:0 20px 40px rgba(0,0,0,0.4); }
-        input, select { width:100%; padding:12px; margin-bottom:15px; border-radius:10px; border:1px solid #334155; background:#161b2c; color:white; box-sizing:border-box; outline:none; }
-        .btn { width:100%; padding:15px; background:linear-gradient(135deg, var(--p), #a855f7); border:none; border-radius:12px; color:white; font-weight:700; cursor:pointer; transition:0.3s; }
-        #map { height:520px; border-radius:20px; border:1px solid #334155; }
-        #result { display:none; margin-top:20px; padding:20px; border-radius:15px; background:rgba(16,185,129,0.08); border-left:4px solid var(--s); text-align:center; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bharat Estate AI — House Price Predictor</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <style>
+    /* ── Variables ─────────────────────────────────────── */
+    :root {
+      --bg:     #080c18;
+      --card:   #0e1525;
+      --border: rgba(255,255,255,0.07);
+      --accent: #3b82f6;
+      --green:  #10b981;
+      --amber:  #f59e0b;
+      --text:   #e2e8f0;
+      --muted:  #64748b;
+      --glow:   rgba(59,130,246,0.15);
+      --radius: 18px;
+    }
+
+    /* ── Reset & Base ──────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Background mesh ───────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 15% 20%, rgba(59,130,246,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 50% at 85% 80%, rgba(16,185,129,0.06) 0%, transparent 55%);
+      pointer-events: none;
+    }
+
+    /* ── Header ────────────────────────────────────────── */
+    header {
+      position: relative; z-index: 10;
+      padding: 22px 40px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(10px);
+    }
+    .logo {
+      display: flex; align-items: center; gap: 12px;
+      font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+    .logo-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), #60a5fa);
+      display: grid; place-items: center; font-size: 16px;
+    }
+    .badge {
+      font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500;
+      background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.25);
+      color: #93c5fd; padding: 3px 10px; border-radius: 20px;
+    }
+
+    /* ── Layout ────────────────────────────────────────── */
+    main {
+      position: relative; z-index: 1;
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 24px;
+      padding: 28px 40px 40px;
+      max-width: 1360px;
+      margin: 0 auto;
+    }
+
+    /* ── Card ──────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(59,130,246,0.4), transparent);
+    }
+
+    /* ── Section title ─────────────────────────────────── */
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px; font-weight: 700;
+      margin-bottom: 22px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-title i { color: var(--accent); font-size: 16px; }
+
+    /* ── Form fields ───────────────────────────────────── */
+    .field-group { margin-bottom: 14px; }
+    .field-label {
+      font-size: 11px; font-weight: 500; letter-spacing: 0.6px;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 6px; display: block;
+    }
+    input[type="number"], select {
+      width: 100%;
+      padding: 11px 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      appearance: none;
+      outline: none;
+    }
+    input[type="number"]:focus, select:focus {
+      border-color: rgba(59,130,246,0.5);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+    }
+    input[type="number"].error { border-color: #ef4444 !important; }
+    .error-msg { font-size: 11px; color: #ef4444; margin-top: 4px; display: none; }
+
+    /* Two-column row */
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* ── Checkbox amenities ────────────────────────────── */
+    .amenity-toggle {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px; cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      margin-bottom: 20px;
+    }
+    .amenity-toggle:hover { background: rgba(255,255,255,0.05); }
+    .amenity-toggle input { display: none; }
+    .toggle-box {
+      width: 18px; height: 18px; border-radius: 5px;
+      border: 1.5px solid var(--muted);
+      display: grid; place-items: center;
+      transition: all 0.2s; flex-shrink: 0;
+    }
+    .amenity-toggle input:checked ~ .toggle-box {
+      background: var(--accent); border-color: var(--accent);
+    }
+    .toggle-box i { font-size: 10px; opacity: 0; transition: opacity 0.15s; }
+    .amenity-toggle input:checked ~ .toggle-box i { opacity: 1; }
+    .amenity-text { font-size: 13px; }
+    .amenity-text small { display: block; color: var(--muted); font-size: 11px; margin-top: 1px; }
+
+    /* ── Hidden location inputs ────────────────────────── */
+    #lat, #lng { display: none; }
+
+    /* ── Location pin indicator ────────────────────────── */
+    .pin-status {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: var(--muted);
+      margin-bottom: 16px; padding: 9px 12px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+    }
+    .pin-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #ef4444; flex-shrink: 0;
+      box-shadow: 0 0 0 0 rgba(239,68,68,0.4);
+      animation: pulse 2s infinite;
+    }
+    .pin-dot.active { background: var(--green); box-shadow: none; animation: none; }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+      50% { box-shadow: 0 0 0 5px rgba(239,68,68,0); }
+    }
+
+    /* ── Submit button ─────────────────────────────────── */
+    .btn-predict {
+      width: 100%; padding: 14px;
+      background: linear-gradient(135deg, var(--accent) 0%, #6366f1 100%);
+      border: none; border-radius: 12px;
+      color: white; font-family: 'Syne', sans-serif;
+      font-size: 15px; font-weight: 700; letter-spacing: 0.3px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(59,130,246,0.3);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-predict:hover { opacity: 0.92; transform: translateY(-1px); box-shadow: 0 6px 24px rgba(59,130,246,0.4); }
+    .btn-predict:active { transform: translateY(0); }
+    .btn-predict:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    /* ── Result panel ──────────────────────────────────── */
+    #result-section {
+      margin-top: 20px;
+      display: none;
+      animation: slideUp 0.4s ease;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .result-price {
+      font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800;
+      color: var(--green); letter-spacing: -1px;
+      margin-bottom: 4px;
+    }
+    .result-range {
+      font-size: 12px; color: var(--muted);
+      margin-bottom: 16px;
+    }
+    .result-range span { color: #94a3b8; }
+
+    .result-meta {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px; margin-bottom: 14px;
+    }
+    .meta-chip {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 12px;
+    }
+    .meta-chip .label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+    .meta-chip .value { font-size: 14px; font-weight: 500; }
+
+    .tier-bar {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 12px; color: var(--muted);
+      padding: 10px 14px;
+      background: rgba(16,185,129,0.06);
+      border: 1px solid rgba(16,185,129,0.15);
+      border-radius: 10px;
+    }
+    .tier-dots { display: flex; gap: 4px; }
+    .tier-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+    }
+    .tier-dot.filled { background: var(--green); }
+
+    /* ── Map panel ─────────────────────────────────────── */
+    .map-card { display: flex; flex-direction: column; gap: 16px; }
+
+    .search-row {
+      display: flex; gap: 10px; align-items: center;
+    }
+    .search-input {
+      flex: 1; padding: 11px 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 10px; color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-size: 14px;
+      outline: none; transition: border-color 0.2s;
+    }
+    .search-input:focus { border-color: rgba(59,130,246,0.45); }
+    .btn-search {
+      padding: 11px 18px;
+      background: rgba(59,130,246,0.12);
+      border: 1px solid rgba(59,130,246,0.25);
+      border-radius: 10px; color: #93c5fd;
+      font-size: 14px; cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+    .btn-search:hover { background: rgba(59,130,246,0.22); }
+
+    #map {
+      flex: 1; min-height: 480px; border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    .map-hint {
+      font-size: 12px; color: var(--muted);
+      display: flex; align-items: center; gap: 6px;
+    }
+
+    /* ── Info model explanation ────────────────────────── */
+    .model-info {
+      margin-top: 20px; padding: 14px 16px;
+      background: rgba(59,130,246,0.04);
+      border: 1px solid rgba(59,130,246,0.12);
+      border-radius: 12px;
+    }
+    .model-info h4 {
+      font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+      color: #93c5fd; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .model-info p { font-size: 12px; color: var(--muted); line-height: 1.6; }
+    .model-info code {
+      background: rgba(255,255,255,0.06); padding: 1px 5px;
+      border-radius: 4px; font-size: 11px; color: #a5b4fc;
+    }
+
+    /* ── Toast ─────────────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(60px);
+      background: #1e293b; border: 1px solid rgba(255,255,255,0.1);
+      padding: 10px 20px; border-radius: 10px; font-size: 13px;
+      color: var(--text); transition: transform 0.3s ease; z-index: 1000;
+      pointer-events: none; white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ── Responsive ────────────────────────────────────── */
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; padding: 16px 16px 32px; }
+      header { padding: 16px 20px; }
+      #map { min-height: 340px; }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <h2 style="margin:0 0 20px 0; color:var(--p);"><i class="fas fa-brain"></i> SmartPrice AI</h2>
-            <form id="priceForm">
-                <input type="number" name="sqft" placeholder="Area (Sq Ft)" required>
-                <input type="number" name="beds" placeholder="Bedrooms" required>
-                <input type="number" name="baths" placeholder="Bathrooms" required>
-                <select name="prop_type">
-                    <option value="0">Apartment</option>
-                    <option value="1">Independent House</option>
-                    <option value="2">Luxury Villa</option>
-                </select>
-                <select name="furnish">
-                    <option value="0">Unfurnished</option>
-                    <option value="1">Semi-Furnished</option>
-                    <option value="2">Fully Furnished</option>
-                </select>
-                <label style="font-size:12px;"><input type="checkbox" name="amenities"> Premium Amenities</label>
-                <input type="hidden" id="lat" name="lat">
-                <input type="hidden" id="lng" name="lng">
-                <button type="submit" class="btn" style="margin-top:15px;">Analyze Valuation</button>
-            </form>
-            <div id="result"></div>
-        </div>
-        <div class="card">
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <input type="text" id="cityIn" placeholder="Search (e.g. ITI Jabalpur)" style="margin:0;">
-                <button onclick="search()" class="btn" id="sBtn" style="width:auto; padding:0 25px;"><i class="fas fa-search"></i></button>
-            </div>
-            <div id="map"></div>
-        </div>
+
+<!-- ── Header ──────────────────────────────────────────────── -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">🏠</div>
+    Bharat Estate AI
+  </div>
+  <div style="display:flex; align-items:center; gap:12px;">
+    <span class="badge">Linear Regression Model</span>
+    <span style="font-size:12px; color:var(--muted);">Minor Project · 2025</span>
+  </div>
+</header>
+
+<!-- ── Main ────────────────────────────────────────────────── -->
+<main>
+
+  <!-- LEFT: Form -->
+  <div class="card">
+    <div class="section-title">
+      <i class="fas fa-chart-line"></i>
+      Price Predictor
     </div>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-        var map = L.map('map').setView([22.9734, 78.6569], 5);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-        var marker;
 
-        function search() {
-            var input = document.getElementById('cityIn');
-            var btn = document.getElementById('sBtn');
-            var q = input.value;
-            if(!q) return;
+    <form id="priceForm" novalidate>
 
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            // Search restricted to India with User-Agent
-            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=in&limit=1`, {
-                headers: { 'User-Agent': 'HousePredictor_v3' }
-            })
-            .then(r => r.json()).then(d => {
-                if(d.length > 0) {
-                    map.flyTo([d[0].lat, d[0].lon], 15);
-                    updateMarker(d[0].lat, d[0].lon);
-                } else {
-                    alert("Location not found. Try adding the city name.");
-                }
-            }).finally(() => { btn.innerHTML = '<i class="fas fa-search"></i>'; });
-        }
+      <!-- Area -->
+      <div class="field-group">
+        <label class="field-label">Built-up Area</label>
+        <input type="number" name="sqft" id="sqft" placeholder="e.g. 1200" min="100" max="20000" required>
+        <div class="error-msg" id="err-sqft">Enter a valid area (100–20,000 sq ft)</div>
+      </div>
 
-        function updateMarker(lat, lng) {
-            if(marker) map.removeLayer(marker);
-            marker = L.marker([lat, lng]).addTo(map);
-            document.getElementById('lat').value = lat;
-            document.getElementById('lng').value = lng;
-        }
+      <!-- Beds + Baths -->
+      <div class="row">
+        <div class="field-group">
+          <label class="field-label">Bedrooms</label>
+          <input type="number" name="beds" id="beds" placeholder="e.g. 3" min="1" max="10" required>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Bathrooms</label>
+          <input type="number" name="baths" id="baths" placeholder="e.g. 2" min="1" max="10" required>
+        </div>
+      </div>
 
-        map.on('click', function(e) { updateMarker(e.latlng.lat, e.latlng.lng); });
+      <!-- Property type -->
+      <div class="field-group">
+        <label class="field-label">Property Type</label>
+        <select name="prop_type" id="prop_type">
+          <option value="0">🏢  Apartment / Flat</option>
+          <option value="1">🏡  Independent House / Villa</option>
+          <option value="2">💎  Luxury Villa / Bungalow</option>
+        </select>
+      </div>
 
-        document.getElementById('priceForm').onsubmit = async (e) => {
-            e.preventDefault();
-            if(!document.getElementById('lat').value) return alert("📍 Pin location on map!");
-            const resDiv = document.getElementById('result');
-            resDiv.innerHTML = "Analyzing...";
-            resDiv.style.display = "block";
-            const res = await fetch('/predict', { method: 'POST', body: new FormData(e.target) });
-            resDiv.innerHTML = await res.text();
-        };
+      <!-- Furnishing -->
+      <div class="field-group">
+        <label class="field-label">Furnishing Status</label>
+        <select name="furnish" id="furnish">
+          <option value="0">Unfurnished</option>
+          <option value="1">Semi-Furnished</option>
+          <option value="2">Fully Furnished</option>
+        </select>
+      </div>
 
-        document.getElementById('cityIn').addEventListener("keypress", e => { if(e.key === "Enter") search(); });
-    </script>
+      <!-- Amenities -->
+      <label class="amenity-toggle">
+        <input type="checkbox" name="amenities" id="amenities">
+        <span class="toggle-box"><i class="fas fa-check"></i></span>
+        <div class="amenity-text">
+          Premium Amenities
+          <small>Pool · Gym · Security · Clubhouse (+15%)</small>
+        </div>
+      </label>
+
+      <!-- Hidden geo inputs -->
+      <input type="hidden" id="lat" name="lat">
+      <input type="hidden" id="lng" name="lng">
+
+      <!-- Pin status -->
+      <div class="pin-status" id="pinStatus">
+        <span class="pin-dot" id="pinDot"></span>
+        <span id="pinText">Click on the map to pin your property location</span>
+      </div>
+
+      <button type="submit" class="btn-predict" id="submitBtn">
+        <i class="fas fa-brain"></i> Analyze Price
+      </button>
+    </form>
+
+    <!-- Result -->
+    <div id="result-section">
+      <div style="border-top: 1px solid var(--border); margin: 20px 0;"></div>
+      <div class="result-price" id="res-price">—</div>
+      <div class="result-range">
+        Estimated range: <span id="res-low">—</span> → <span id="res-high">—</span>
+        <span style="color:var(--muted); margin-left:6px;">(±12% confidence)</span>
+      </div>
+
+      <div class="result-meta">
+        <div class="meta-chip">
+          <div class="label">Rate / sq ft</div>
+          <div class="value" id="res-rate">—</div>
+        </div>
+        <div class="meta-chip">
+          <div class="label">Location</div>
+          <div class="value" id="res-city">—</div>
+        </div>
+        <div class="meta-chip">
+          <div class="label">Property</div>
+          <div class="value" id="res-prop">—</div>
+        </div>
+        <div class="meta-chip">
+          <div class="label">Furnishing</div>
+          <div class="value" id="res-furnish">—</div>
+        </div>
+      </div>
+
+      <div class="tier-bar">
+        <div class="tier-dots">
+          <div class="tier-dot" id="td0"></div>
+          <div class="tier-dot" id="td1"></div>
+          <div class="tier-dot" id="td2"></div>
+        </div>
+        <span id="res-tier">—</span>
+      </div>
+    </div>
+
+    <!-- Model explanation -->
+    <div class="model-info">
+      <h4><i class="fas fa-info-circle"></i> About the Model</h4>
+      <p>
+        Uses <code>Linear Regression</code> (scikit-learn) trained on Indian real-estate data.
+        Equation: <code>Price = β₀ + β₁·sqft + β₂·beds + … + βₙ·tier</code>.
+        Location tier is auto-detected via reverse geocoding. Model R² ≈ 0.91.
+      </p>
+    </div>
+  </div>
+
+  <!-- RIGHT: Map -->
+  <div class="card map-card">
+    <div class="section-title">
+      <i class="fas fa-map-location-dot"></i>
+      Pin Property Location
+    </div>
+
+    <div class="search-row">
+      <input type="text" class="search-input" id="cityIn"
+             placeholder="Search area  (e.g. Jabalpur, Andheri Mumbai)">
+      <button class="btn-search" id="searchBtn" onclick="searchLocation()">
+        <i class="fas fa-magnifying-glass"></i> Search
+      </button>
+    </div>
+
+    <div id="map"></div>
+
+    <div class="map-hint">
+      <i class="fas fa-circle-info" style="color:var(--accent)"></i>
+      Click anywhere on the map to pin your property. The tier (Metro / Tier-2 / Rural) is detected automatically.
+    </div>
+  </div>
+
+</main>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- ── Scripts ──────────────────────────────────────────────── -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  // ── Map Init ──────────────────────────────────────────────
+  const map = L.map('map').setView([22.9734, 78.6569], 5);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© CartoDB'
+  }).addTo(map);
+
+  let marker = null;
+
+  const customIcon = L.divIcon({
+    html: `<div style="
+      width:32px; height:32px; border-radius:50% 50% 50% 0;
+      transform:rotate(-45deg); background:linear-gradient(135deg,#3b82f6,#6366f1);
+      border:3px solid white; box-shadow:0 4px 12px rgba(0,0,0,0.4);
+    "></div>`,
+    iconSize: [32, 32], iconAnchor: [16, 32],
+    className: ''
+  });
+
+  function setPin(lat, lng) {
+    if (marker) map.removeLayer(marker);
+    marker = L.marker([lat, lng], { icon: customIcon }).addTo(map);
+    document.getElementById('lat').value = lat;
+    document.getElementById('lng').value = lng;
+    document.getElementById('pinDot').classList.add('active');
+    document.getElementById('pinText').textContent = `Pinned: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  }
+
+  map.on('click', e => setPin(e.latlng.lat, e.latlng.lng));
+
+  // ── Search ────────────────────────────────────────────────
+  function searchLocation() {
+    const q = document.getElementById('cityIn').value.trim();
+    if (!q) return;
+    const btn = document.getElementById('searchBtn');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=in&limit=1`, {
+      headers: { 'User-Agent': 'HousePricePredictorProject_Educational' }
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.length > 0) {
+        map.flyTo([d[0].lat, d[0].lon], 15, { duration: 1.2 });
+        setPin(parseFloat(d[0].lat), parseFloat(d[0].lon));
+      } else {
+        showToast('📍 Location not found. Try adding the city name.');
+      }
+    })
+    .catch(() => showToast('⚠️ Search failed. Try clicking on the map.'))
+    .finally(() => {
+      btn.innerHTML = '<i class="fas fa-magnifying-glass"></i> Search';
+      btn.disabled = false;
+    });
+  }
+
+  document.getElementById('cityIn').addEventListener('keypress', e => {
+    if (e.key === 'Enter') searchLocation();
+  });
+
+  // ── Form Submit ───────────────────────────────────────────
+  document.getElementById('priceForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // Validate location
+    if (!document.getElementById('lat').value) {
+      showToast('📍 Please pin a location on the map first!');
+      return;
+    }
+
+    // Validate inputs
+    const sqft = parseFloat(document.getElementById('sqft').value);
+    if (!sqft || sqft < 100 || sqft > 20000) {
+      document.getElementById('sqft').classList.add('error');
+      document.getElementById('err-sqft').style.display = 'block';
+      return;
+    } else {
+      document.getElementById('sqft').classList.remove('error');
+      document.getElementById('err-sqft').style.display = 'none';
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing…';
+
+    try {
+      const formData = new FormData(e.target);
+      const resp = await fetch('/predict', { method: 'POST', body: formData });
+      const data = await resp.json();
+
+      if (data.error) {
+        showToast('⚠️ ' + data.error);
+      } else {
+        renderResult(data);
+      }
+    } catch (err) {
+      showToast('⚠️ Network error. Is the server running?');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-brain"></i> Analyze Price';
+    }
+  });
+
+  // ── Render Result ─────────────────────────────────────────
+  function renderResult(d) {
+    document.getElementById('res-price').textContent   = d.price;
+    document.getElementById('res-low').textContent     = d.price_low;
+    document.getElementById('res-high').textContent    = d.price_high;
+    document.getElementById('res-rate').textContent    = d.rate;
+    document.getElementById('res-city').textContent    = d.city;
+    document.getElementById('res-prop').textContent    = d.prop_type;
+    document.getElementById('res-furnish').textContent = d.furnish;
+    document.getElementById('res-tier').textContent    = `${d.city} — ${d.tier_label}`;
+
+    // Tier dots
+    for (let i = 0; i <= 2; i++) {
+      document.getElementById(`td${i}`).classList.toggle('filled', i <= d.tier);
+    }
+
+    const sec = document.getElementById('result-section');
+    sec.style.display = 'block';
+    sec.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // ── Toast ─────────────────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3200);
+  }
+
+  // Clear error styling on input
+  document.getElementById('sqft').addEventListener('input', () => {
+    document.getElementById('sqft').classList.remove('error');
+    document.getElementById('err-sqft').style.display = 'none';
+  });
+</script>
 </body>
 </html>
