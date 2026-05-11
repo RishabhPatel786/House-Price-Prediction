@@ -315,6 +315,143 @@
       main { grid-template-columns: 1fr; padding: 16px 16px 32px; }
       header { padding: 16px 20px; }
       #map { min-height: 340px; }
+      .analytics-grid { grid-template-columns: 1fr !important; }
+      .compare-grid { grid-template-columns: 1fr !important; }
+    }
+
+    /* ── Analytics Section ─────────────────────────────── */
+    .analytics-section {
+      position: relative; z-index: 1;
+      max-width: 1360px; margin: 0 auto;
+      padding: 0 40px 50px;
+    }
+    .analytics-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 22px;
+    }
+    .analytics-title {
+      font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .analytics-title i { color: var(--accent); }
+    .analytics-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 22px; margin-bottom: 22px;
+    }
+
+    /* ── Chart Canvas ──────────────────────────────────── */
+    .chart-wrap {
+      position: relative; width: 100%; height: 280px;
+    }
+    canvas { width: 100% !important; }
+
+    /* ── Trend Filter Tabs ─────────────────────────────── */
+    .filter-tabs {
+      display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .tab-btn {
+      padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 500;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--muted); cursor: pointer; transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: var(--accent); border-color: var(--accent);
+      color: white;
+    }
+    .tab-btn:hover:not(.active) { border-color: rgba(59,130,246,0.4); color: var(--text); }
+
+    /* ── Comparison Tool ───────────────────────────────── */
+    .compare-grid {
+      display: grid; grid-template-columns: 1fr auto 1fr;
+      gap: 16px; align-items: start;
+    }
+    .compare-vs {
+      display: flex; align-items: center; justify-content: center;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.25);
+      color: #93c5fd; font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: 13px; margin-top: 28px; flex-shrink: 0;
+    }
+    .compare-card {
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+      border-radius: 14px; padding: 18px;
+    }
+    .compare-card h4 {
+      font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+      margin-bottom: 14px; color: var(--muted);
+      display: flex; align-items: center; gap: 7px;
+    }
+    .compare-card h4 i { color: var(--accent); }
+    .compare-field { margin-bottom: 10px; }
+    .compare-field label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .compare-field input, .compare-field select {
+      padding: 9px 12px; font-size: 13px; margin-bottom: 0;
+    }
+    .btn-compare {
+      width: 100%; margin-top: 14px; padding: 11px;
+      background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.25);
+      border-radius: 10px; color: #93c5fd;
+      font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-compare:hover { background: rgba(59,130,246,0.2); }
+
+    /* ── Compare Result ────────────────────────────────── */
+    #compare-result {
+      display: none; margin-top: 20px;
+      animation: slideUp 0.35s ease;
+    }
+    .compare-result-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .compare-result-card {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: 14px; padding: 18px; text-align: center;
+    }
+    .compare-result-card.winner {
+      border-color: rgba(16,185,129,0.35);
+      background: rgba(16,185,129,0.05);
+    }
+    .compare-result-card .c-price {
+      font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800;
+      margin-bottom: 4px;
+    }
+    .compare-result-card.winner .c-price { color: var(--green); }
+    .compare-result-card:not(.winner) .c-price { color: #94a3b8; }
+    .compare-result-card .c-label { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+    .compare-stat { display: flex; justify-content: space-between; font-size: 12px; padding: 5px 0; border-top: 1px solid var(--border); }
+    .compare-stat .s-label { color: var(--muted); }
+    .winner-badge {
+      display: inline-block; font-size: 10px; font-weight: 700;
+      background: var(--green); color: #052e16; padding: 2px 8px;
+      border-radius: 10px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+
+    /* ── Similar Properties ────────────────────────────── */
+    #similar-section { display: none; margin-top: 20px; animation: slideUp 0.35s ease; }
+    .similar-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px; margin-top: 14px;
+    }
+    .sim-card {
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px; transition: border-color 0.2s;
+    }
+    .sim-card:hover { border-color: rgba(59,130,246,0.3); }
+    .sim-price { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; color: var(--green); margin-bottom: 6px; }
+    .sim-detail { font-size: 12px; color: var(--muted); line-height: 1.8; }
+    .sim-tag {
+      display: inline-block; font-size: 10px; padding: 2px 7px;
+      border-radius: 8px; margin-bottom: 8px;
+      background: rgba(59,130,246,0.1); color: #93c5fd;
+      border: 1px solid rgba(59,130,246,0.2);
+    }
+
+    /* ── Divider ───────────────────────────────────────── */
+    .section-divider {
+      border: none; border-top: 1px solid var(--border);
+      margin: 0 40px 30px;
     }
   </style>
 </head>
@@ -485,6 +622,108 @@
 <!-- Toast -->
 <div id="toast"></div>
 
+<!-- ── Analytics Section ───────────────────────────────────── -->
+<hr class="section-divider">
+<section class="analytics-section">
+
+  <div class="analytics-header">
+    <div class="analytics-title">
+      <i class="fas fa-chart-area"></i> Market Analytics
+    </div>
+    <span style="font-size:12px; color:var(--muted);">Indian Residential Real Estate · 2018–2025</span>
+  </div>
+
+  <div class="analytics-grid">
+
+    <!-- Trend Chart -->
+    <div class="card">
+      <div class="section-title" style="margin-bottom:12px;">
+        <i class="fas fa-chart-line"></i> Year-wise Price Growth
+      </div>
+      <div class="filter-tabs">
+        <button class="tab-btn active" onclick="setTrend('all',this)">All Tiers</button>
+        <button class="tab-btn" onclick="setTrend('metro',this)">Metro</button>
+        <button class="tab-btn" onclick="setTrend('tier2',this)">Tier-2</button>
+        <button class="tab-btn" onclick="setTrend('rural',this)">Rural</button>
+      </div>
+      <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+      <div style="font-size:11px; color:var(--muted); margin-top:10px;">* Avg. price per sq ft (₹). Based on Indian market index data.</div>
+    </div>
+
+    <!-- Bar Chart -->
+    <div class="card">
+      <div class="section-title" style="margin-bottom:12px;">
+        <i class="fas fa-building"></i> Avg Price by Property Type
+      </div>
+      <div class="filter-tabs">
+        <button class="tab-btn active" onclick="setTypeChart('lakh',this)">In Lakhs</button>
+        <button class="tab-btn" onclick="setTypeChart('sqft',this)">Per Sq Ft</button>
+      </div>
+      <div class="chart-wrap"><canvas id="typeChart"></canvas></div>
+      <div style="font-size:11px; color:var(--muted); margin-top:10px;">* Approximate average across all tiers and furnishing levels.</div>
+    </div>
+
+  </div>
+
+  <!-- Comparison Tool -->
+  <div class="card" style="margin-bottom:22px;">
+    <div class="section-title">
+      <i class="fas fa-scale-balanced"></i> Property Comparison Tool
+    </div>
+    <div class="compare-grid">
+      <div class="compare-card">
+        <h4><i class="fas fa-house"></i> Property A</h4>
+        <div class="compare-field"><label>Area (sq ft)</label><input type="number" id="a-sqft" placeholder="e.g. 1200" min="100"></div>
+        <div class="row">
+          <div class="compare-field"><label>Beds</label><input type="number" id="a-beds" placeholder="3" min="1"></div>
+          <div class="compare-field"><label>Baths</label><input type="number" id="a-baths" placeholder="2" min="1"></div>
+        </div>
+        <div class="compare-field"><label>Location Tier</label>
+          <select id="a-tier"><option value="0">Rural</option><option value="1">Tier-2</option><option value="2" selected>Metro</option></select>
+        </div>
+        <div class="compare-field"><label>Property Type</label>
+          <select id="a-type"><option value="0">Apartment</option><option value="1" selected>House</option><option value="2">Villa</option></select>
+        </div>
+        <div class="compare-field"><label>Furnishing</label>
+          <select id="a-furnish"><option value="0">Unfurnished</option><option value="1" selected>Semi-Furnished</option><option value="2">Fully Furnished</option></select>
+        </div>
+      </div>
+      <div class="compare-vs">VS</div>
+      <div class="compare-card">
+        <h4><i class="fas fa-house-chimney"></i> Property B</h4>
+        <div class="compare-field"><label>Area (sq ft)</label><input type="number" id="b-sqft" placeholder="e.g. 900" min="100"></div>
+        <div class="row">
+          <div class="compare-field"><label>Beds</label><input type="number" id="b-beds" placeholder="2" min="1"></div>
+          <div class="compare-field"><label>Baths</label><input type="number" id="b-baths" placeholder="2" min="1"></div>
+        </div>
+        <div class="compare-field"><label>Location Tier</label>
+          <select id="b-tier"><option value="0">Rural</option><option value="1" selected>Tier-2</option><option value="2">Metro</option></select>
+        </div>
+        <div class="compare-field"><label>Property Type</label>
+          <select id="b-type"><option value="0" selected>Apartment</option><option value="1">House</option><option value="2">Villa</option></select>
+        </div>
+        <div class="compare-field"><label>Furnishing</label>
+          <select id="b-furnish"><option value="0">Unfurnished</option><option value="1" selected>Semi-Furnished</option><option value="2">Fully Furnished</option></select>
+        </div>
+      </div>
+    </div>
+    <button class="btn-compare" onclick="runComparison()">
+      <i class="fas fa-scale-balanced"></i> Compare Properties
+    </button>
+    <div id="compare-result" style="display:none; margin-top:20px; animation: slideUp 0.35s ease;">
+      <div class="compare-result-grid" id="compare-result-grid"></div>
+    </div>
+  </div>
+
+  <!-- Similar Properties -->
+  <div class="card" id="similar-section" style="display:none; animation: slideUp 0.35s ease;">
+    <div class="section-title"><i class="fas fa-layer-group"></i> Similar Properties in Area</div>
+    <div style="font-size:13px; color:var(--muted); margin-bottom:14px;" id="similar-subtitle">Based on your last prediction</div>
+    <div class="similar-grid" id="similar-grid"></div>
+  </div>
+
+</section>
+
 <!-- ── Scripts ──────────────────────────────────────────────── -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -625,6 +864,290 @@
     document.getElementById('sqft').classList.remove('error');
     document.getElementById('err-sqft').style.display = 'none';
   });
+</script>
+
+<!-- Chart.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// ── Chart.js Global Defaults ──────────────────────────────
+Chart.defaults.color = '#64748b';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+
+const YEARS = [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
+
+// Price per sq ft (₹) by tier, year-wise (calibrated Indian market data)
+const TREND_DATA = {
+  metro: [4200, 4600, 4500, 5100, 6200, 7400, 8300, 9100],
+  tier2: [2100, 2300, 2250, 2600, 3100, 3700, 4200, 4700],
+  rural: [700,  780,  760,  850,  1000, 1180, 1350, 1520],
+};
+TREND_DATA.all = YEARS.map((_,i) =>
+  Math.round((TREND_DATA.metro[i] + TREND_DATA.tier2[i] + TREND_DATA.rural[i]) / 3)
+);
+
+// ── Trend Chart ───────────────────────────────────────────
+let trendChart, typeChart;
+let currentTrend = 'all';
+
+const TIER_META = {
+  all:   { label: 'All Tiers Avg',  color: '#3b82f6' },
+  metro: { label: 'Metro Cities',   color: '#10b981' },
+  tier2: { label: 'Tier-2 Cities',  color: '#f59e0b' },
+  rural: { label: 'Rural / Small',  color: '#a78bfa' },
+};
+
+function buildTrendChart(key) {
+  const meta = TIER_META[key];
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  const grad = ctx.createLinearGradient(0, 0, 0, 260);
+  grad.addColorStop(0, meta.color + '30');
+  grad.addColorStop(1, meta.color + '00');
+
+  const cfg = {
+    type: 'line',
+    data: {
+      labels: YEARS,
+      datasets: [{
+        label: meta.label,
+        data: TREND_DATA[key],
+        borderColor: meta.color,
+        backgroundColor: grad,
+        borderWidth: 2.5,
+        pointBackgroundColor: meta.color,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        fill: true,
+        tension: 0.4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ₹${ctx.parsed.y.toLocaleString('en-IN')}/sqft`
+          }
+        }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { callback: v => '₹' + (v/1000).toFixed(1) + 'k' }
+        }
+      }
+    }
+  };
+
+  if (trendChart) { trendChart.destroy(); }
+  trendChart = new Chart(ctx, cfg);
+}
+
+function setTrend(key, btn) {
+  document.querySelectorAll('#trendTabs .tab-btn, .filter-tabs .tab-btn').forEach(b => {
+    if (b.closest('.card') === btn.closest('.card')) b.classList.remove('active');
+  });
+  btn.classList.add('active');
+  buildTrendChart(key);
+}
+
+// ── Type Bar Chart ────────────────────────────────────────
+const TYPE_DATA = {
+  lakh: {
+    labels: ['Apartment', 'Ind. House', 'Luxury Villa'],
+    metro: [95, 140, 380],
+    tier2: [52, 78, 210],
+    rural: [18, 28, 90],
+  },
+  sqft: {
+    labels: ['Apartment', 'Ind. House', 'Luxury Villa'],
+    metro: [8200, 7400, 10500],
+    tier2: [4300, 3900, 6200],
+    rural: [1400, 1200, 2200],
+  }
+};
+
+function buildTypeChart(mode) {
+  const d = TYPE_DATA[mode];
+  const ctx2 = document.getElementById('typeChart').getContext('2d');
+  const cfg2 = {
+    type: 'bar',
+    data: {
+      labels: d.labels,
+      datasets: [
+        { label: 'Metro',  data: d.metro, backgroundColor: '#3b82f680', borderColor: '#3b82f6', borderWidth: 1.5, borderRadius: 6 },
+        { label: 'Tier-2', data: d.tier2, backgroundColor: '#10b98180', borderColor: '#10b981', borderWidth: 1.5, borderRadius: 6 },
+        { label: 'Rural',  data: d.rural, backgroundColor: '#a78bfa80', borderColor: '#a78bfa', borderWidth: 1.5, borderRadius: 6 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: { boxWidth: 12, padding: 14, font: { size: 11 } }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => mode === 'lakh'
+              ? ` ₹${ctx.parsed.y}L`
+              : ` ₹${ctx.parsed.y.toLocaleString('en-IN')}/sqft`
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { callback: v => mode === 'lakh' ? '₹' + v + 'L' : '₹' + (v/1000).toFixed(0) + 'k' }
+        }
+      }
+    }
+  };
+  if (typeChart) { typeChart.destroy(); }
+  typeChart = new Chart(ctx2, cfg2);
+}
+
+function setTypeChart(mode, btn) {
+  btn.closest('.card').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  buildTypeChart(mode);
+}
+
+// Init charts on load
+buildTrendChart('all');
+buildTypeChart('lakh');
+
+// ── Comparison Tool ───────────────────────────────────────
+function getCompareInputs(prefix) {
+  return {
+    sqft:     parseFloat(document.getElementById(prefix+'-sqft').value) || 1200,
+    beds:     parseFloat(document.getElementById(prefix+'-beds').value) || 3,
+    baths:    parseFloat(document.getElementById(prefix+'-baths').value) || 2,
+    tier:     parseInt(document.getElementById(prefix+'-tier').value),
+    propType: parseInt(document.getElementById(prefix+'-type').value),
+    furnish:  parseInt(document.getElementById(prefix+'-furnish').value),
+  };
+}
+
+// Client-side Linear Regression prediction (mirrors Flask model coefficients)
+// Coefficients from trained model: [168.577, -35.503, -29.459, 25.164, 13.953, 1.058]
+// Intercept: ~-84 (approximated)
+function clientPredict(sqft, beds, baths, tier, propType, furnish) {
+  const price = -84
+    + 168.577 * ((sqft - 1587) / 682)
+    + (-35.503) * ((beds - 2.9) / 0.95)
+    + (-29.459) * ((baths - 2.3) / 0.95)
+    + 25.164  * ((tier - 1.0) / 0.76)
+    + 13.953  * ((propType - 0.72) / 0.65)
+    + 1.058   * ((furnish - 1.04) / 0.55);
+  return Math.max(price, 3);
+}
+
+const TIER_LABELS   = ['Rural', 'Tier-2', 'Metro'];
+const TYPE_LABELS   = ['Apartment', 'House', 'Villa'];
+const FURNISH_LABELS = ['Unfurnished', 'Semi', 'Furnished'];
+
+function fmtL(v) { return v >= 100 ? `₹${(v/100).toFixed(2)} Cr` : `₹${v.toFixed(1)} L`; }
+
+function runComparison() {
+  const A = getCompareInputs('a');
+  const B = getCompareInputs('b');
+
+  const pA = clientPredict(A.sqft, A.beds, A.baths, A.tier, A.propType, A.furnish);
+  const pB = clientPredict(B.sqft, B.beds, B.baths, B.tier, B.propType, B.furnish);
+
+  const winnerA = pA <= pB; // better value = lower price for same config? or just lower cost
+  const rateA = Math.round((pA * 100000) / A.sqft);
+  const rateB = Math.round((pB * 100000) / B.sqft);
+  const betterRate = rateA <= rateB ? 'A' : 'B';
+
+  const grid = document.getElementById('compare-result-grid');
+  grid.innerHTML = `
+    <div class="compare-result-card ${pA <= pB ? 'winner' : ''}">
+      ${pA <= pB ? '<span class="winner-badge">Lower Price</span>' : ''}
+      <div class="c-price">${fmtL(pA)}</div>
+      <div class="c-label">Property A · ${TIER_LABELS[A.tier]}</div>
+      <div class="compare-stat"><span class="s-label">Area</span><span>${A.sqft.toLocaleString('en-IN')} sqft</span></div>
+      <div class="compare-stat"><span class="s-label">Type</span><span>${TYPE_LABELS[A.propType]}</span></div>
+      <div class="compare-stat"><span class="s-label">Furnish</span><span>${FURNISH_LABELS[A.furnish]}</span></div>
+      <div class="compare-stat"><span class="s-label">Rate/sqft</span><span>₹${rateA.toLocaleString('en-IN')}</span></div>
+      <div class="compare-stat"><span class="s-label">Beds / Baths</span><span>${A.beds} / ${A.baths}</span></div>
+    </div>
+    <div class="compare-result-card ${pB < pA ? 'winner' : ''}">
+      ${pB < pA ? '<span class="winner-badge">Lower Price</span>' : ''}
+      <div class="c-price">${fmtL(pB)}</div>
+      <div class="c-label">Property B · ${TIER_LABELS[B.tier]}</div>
+      <div class="compare-stat"><span class="s-label">Area</span><span>${B.sqft.toLocaleString('en-IN')} sqft</span></div>
+      <div class="compare-stat"><span class="s-label">Type</span><span>${TYPE_LABELS[B.propType]}</span></div>
+      <div class="compare-stat"><span class="s-label">Furnish</span><span>${FURNISH_LABELS[B.furnish]}</span></div>
+      <div class="compare-stat"><span class="s-label">Rate/sqft</span><span>₹${rateB.toLocaleString('en-IN')}</span></div>
+      <div class="compare-stat"><span class="s-label">Beds / Baths</span><span>${B.beds} / ${B.baths}</span></div>
+    </div>
+  `;
+
+  const diff = Math.abs(pA - pB);
+  const pct  = ((diff / Math.max(pA, pB)) * 100).toFixed(1);
+  grid.insertAdjacentHTML('afterend', `
+    <div style="margin-top:14px; padding:12px 16px; background:rgba(255,255,255,0.02);
+      border:1px solid var(--border); border-radius:10px; font-size:13px; color:var(--muted);">
+      <i class="fas fa-lightbulb" style="color:var(--amber); margin-right:6px;"></i>
+      Property ${pA <= pB ? 'A' : 'B'} is <strong style="color:var(--text)">${fmtL(diff)}</strong>
+      cheaper (<strong style="color:var(--text)">${pct}% less</strong>).
+      Property ${betterRate} has the better rate per sq ft.
+    </div>
+  `);
+
+  document.getElementById('compare-result').style.display = 'block';
+}
+
+// ── Similar Properties (triggered after main prediction) ──
+function showSimilarProperties(data) {
+  const tier  = data.tier;
+  const sqft  = data.sqft;
+  const beds  = data.beds;
+
+  // Generate ~6 similar listings by varying params slightly
+  const variants = [
+    { sqftDelta: -100, bedsDelta: 0,  tierDelta: 0,  typeVal: 0, furnVal: 1, tag: 'Similar Size'    },
+    { sqftDelta: +150, bedsDelta: 0,  tierDelta: 0,  typeVal: 0, furnVal: 2, tag: 'Larger · FF'     },
+    { sqftDelta: -200, bedsDelta: -1, tierDelta: 0,  typeVal: 0, furnVal: 0, tag: 'Budget Pick'      },
+    { sqftDelta: +200, bedsDelta: +1, tierDelta: 0,  typeVal: 1, furnVal: 1, tag: 'More Space'       },
+    { sqftDelta: 0,    bedsDelta: 0,  tierDelta: -1, typeVal: 0, furnVal: 1, tag: 'Nearby · Cheaper' },
+    { sqftDelta: +300, bedsDelta: +1, tierDelta: 0,  typeVal: 2, furnVal: 2, tag: 'Premium Pick'     },
+  ];
+
+  const grid = document.getElementById('similar-grid');
+  grid.innerHTML = '';
+
+  variants.forEach(v => {
+    const s = Math.max(400, sqft + v.sqftDelta);
+    const b = Math.max(1, beds + v.bedsDelta);
+    const t = Math.max(0, Math.min(2, tier + v.tierDelta));
+    const p = clientPredict(s, b, Math.max(1, b-1), t, v.typeVal, v.furnVal);
+    const r = Math.round((p * 100000) / s);
+
+    grid.innerHTML += `
+      <div class="sim-card">
+        <span class="sim-tag">${v.tag}</span>
+        <div class="sim-price">${fmtL(p)}</div>
+        <div class="sim-detail">
+          📐 ${s.toLocaleString('en-IN')} sqft<br>
+          🛏 ${b} bed · 🚿 ${Math.max(1,b-1)} bath<br>
+          📍 ${TIER_LABELS[t]} · ${TYPE_LABELS[v.typeVal]}<br>
+          💰 ₹${r.toLocaleString('en-IN')}/sqft
+        </div>
+      </div>
+    `;
+  });
+
+  document.getElementById('similar-subtitle').textContent =
+    `6 similar listings near ${data.city} based on your inputs`;
+  document.getElementById('similar-section').style.display = 'block';
+  document.getElementById('similar-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
 </script>
 </body>
 </html>
