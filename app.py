@@ -4,30 +4,18 @@ import numpy as np
 import pandas as pd
 import requests
 import os
-import json
 
 app = Flask(__name__)
 
-# Load the trained Linear Regression model
+# Load the trained Linear Regression pipeline
 with open('model.pkl', 'rb') as f:
     model = pickle.load(f)
 
-# City tier mapping
-PRIME_CITIES = [
-    'mumbai', 'delhi', 'bangalore', 'bengaluru', 'hyderabad',
-    'chennai', 'kolkata', 'pune', 'ahmedabad', 'indore', 'surat',
-    'new delhi', 'navi mumbai', 'thane', 'gurgaon', 'gurugram', 'noida'
-]
-
-TIER2_CITIES = [
-    'jabalpur', 'bhopal', 'gwalior', 'vadodara', 'rajkot',
-    'nagpur', 'nashik', 'aurangabad', 'coimbatore', 'lucknow',
-    'kanpur', 'jaipur', 'patna', 'bhubaneswar', 'chandigarh',
-    'dehradun', 'mysuru', 'mysore', 'mangalore', 'hubli', 'dharwad',
-    'amritsar', 'ludhiana', 'agra', 'varanasi', 'meerut', 'raipur',
-    'ranchi', 'jodhpur', 'udaipur', 'kota', 'ajmer', 'sagar',
-    'ujjain', 'rewa', 'satna', 'katni', 'chhindwara', 'betul'
-]
+# Intelligence Keywords
+HIGHWAY_KEYWORDS = ['highway', 'nh', 'bypass', 'expressway', 'road', 'marg', 'cloverleaf']
+VILLAGE_KEYWORDS = ['village', 'gram', 'rural', 'kheda', 'basti', 'panchayat']
+PRIME_CITIES = ['mumbai', 'delhi', 'bangalore', 'bengaluru', 'hyderabad', 'pune', 'indore', 'gurgaon', 'noida']
+TIER2_CITIES = ['jabalpur', 'bhopal', 'gwalior', 'vadodara', 'jaipur', 'lucknow', 'kanpur', 'nagpur', 'surat']
 
 @app.route('/')
 def home():
@@ -36,113 +24,77 @@ def home():
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-        # ── 1. Parse Inputs ──────────────────────────────────────────
-        sqft      = float(request.form.get('sqft', 1))
-        beds      = float(request.form.get('beds', 0))
-        baths     = float(request.form.get('baths', 0))
+        # ── 1. Parse Inputs ──
+        sqft = float(request.form.get('sqft', 1))
+        beds = float(request.form.get('beds', 1))
+        baths = float(request.form.get('baths', 1))
         prop_type = float(request.form.get('prop_type', 0))
-        furnish   = float(request.form.get('furnish', 0))
-        amenities = bool(request.form.get('amenities'))
-        lat       = request.form.get('lat', '').strip()
-        lng       = request.form.get('lng', '').strip()
+        furnish = float(request.form.get('furnish', 0))
+        amenities = request.form.get('amenities') == 'true'
+        lat, lng = request.form.get('lat'), request.form.get('lng')
 
-        # Input sanity checks
-        if sqft <= 0:
-            return jsonify({'error': 'Area must be greater than 0'}), 400
-        if beds < 1 or baths < 1:
-            return jsonify({'error': 'Beds and baths must be at least 1'}), 400
-
-        # ── 2. Geo-based Tier Detection ──────────────────────────────
+        # ── 2. Intelligent Geo-Detection ──
         tier = 0
-        location_label = "Rural / Village"
-        city_display = "Unknown Area"
+        location_label = "Standard Residential"
+        city_display = "Unknown Location"
+        context_multiplier = 1.0
 
         if lat and lng:
-            try:
-                headers = {'User-Agent': 'HousePricePredictorProject_v4_Educational'}
-                geo_url = (
-                    f"https://nominatim.openstreetmap.org/reverse"
-                    f"?format=json&lat={lat}&lon={lng}&addressdetails=1"
-                )
-                resp = requests.get(geo_url, headers=headers, timeout=6)
-                resp.raise_for_status()
-                geo_data = resp.json()
+            headers = {'User-Agent': 'BharatEstate_AI_Professional_V2'}
+            geo_url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lng}&addressdetails=1"
+            resp = requests.get(geo_url, headers=headers, timeout=5).json()
+            
+            addr = resp.get('address', {})
+            full_address = resp.get('display_name', '').lower()
+            city_display = addr.get('city') or addr.get('town') or addr.get('village') or addr.get('suburb') or "Selected Area"
 
-                addr = geo_data.get('address', {})
-                full_address = geo_data.get('display_name', '').lower()
+            # A. Detect Highway Proximity (20% Premium)
+            if any(key in full_address for key in HIGHWAY_KEYWORDS):
+                context_multiplier += 0.20
+                location_label = "Prime Connectivity Zone (Highway/Main Road)"
+            
+            # B. Assign Tier based on City lists
+            if any(c in full_address for c in PRIME_CITIES):
+                tier = 2
+                location_label = "Metro / Prime Zone" if tier == 2 else location_label
+            elif any(c in full_address for c in TIER2_CITIES):
+                tier = 1
+                location_label = "Developed Urban Center"
+            
+            # C. Detect Village/Rural Context (15% Discount)
+            if any(key in full_address for key in VILLAGE_KEYWORDS):
+                tier = 0
+                context_multiplier -= 0.15
+                location_label = "Rural / Village Settlement"
 
-                # Best city name fallback chain
-                city_display = (
-                    addr.get('city') or
-                    addr.get('town') or
-                    addr.get('suburb') or
-                    addr.get('county') or
-                    addr.get('state_district') or
-                    "Selected Area"
-                )
+        # ── 3. Model Prediction ──
+        features = pd.DataFrame([[sqft, beds, baths, tier, prop_type, furnish]], 
+                                columns=["sqft","beds","baths","tier","prop_type","furnish"])
+        
+        # Linear Regression Baseline
+        prediction = float(model.predict(features)[0])
+        
+        # Apply Geospatial Context
+        final_price = prediction * context_multiplier
+        if amenities: final_price *= 1.12 # 12% boost for amenities
+        
+        # Logical price floor by Tier
+        floors = {0: 4.5, 1: 12.0, 2: 30.0}
+        final_price = max(final_price, floors.get(tier, 5.0))
 
-                if any(c in full_address for c in PRIME_CITIES):
-                    tier = 2
-                    location_label = "Prime Metro City"
-                elif any(c in full_address for c in TIER2_CITIES):
-                    tier = 1
-                    location_label = "Tier-2 City"
-                else:
-                    tier = 0
-                    location_label = "Rural / Small Town"
-
-            except requests.exceptions.Timeout:
-                city_display = "Location (timeout)"
-            except Exception:
-                city_display = "Location Detected"
-
-        # ── 3. Predict via Linear Regression ─────────────────────────
-        cols = ["sqft","beds","baths","tier","prop_type","furnish"]
-        features = pd.DataFrame([[sqft, beds, baths, tier, prop_type, furnish]], columns=cols)
-        base_price = float(model.predict(features)[0])
-        base_price = max(base_price, 3.0)  # floor: ₹3 Lakh
-
-        # Premium amenities uplift
-        if amenities:
-            base_price *= 1.15
-
-        # Confidence interval (±12% for LR model)
-        low  = base_price * 0.88
-        high = base_price * 1.12
-
-        # ── 4. Format Results ─────────────────────────────────────────
-        def fmt(val):
-            if val >= 100:
-                return f"₹{val/100:.2f} Cr"
-            return f"₹{val:.1f} L"
-
-        rate_per_sqft = int((base_price * 100000) / sqft) if sqft > 0 else 0
-
-        # Property type label
-        prop_labels = {0: "Apartment", 1: "Independent House", 2: "Luxury Villa"}
-        furnish_labels = {0: "Unfurnished", 1: "Semi-Furnished", 2: "Fully Furnished"}
-
+        # ── 4. Format Result ──
+        def fmt(v): return f"₹{v/100:.2f} Cr" if v >= 100 else f"₹{v:.1f} L"
+        
         return jsonify({
-            'price':        fmt(base_price),
-            'price_low':    fmt(low),
-            'price_high':   fmt(high),
-            'rate':         f"₹{rate_per_sqft:,}/sqft",
-            'tier':         tier,
-            'tier_label':   location_label,
-            'city':         city_display.title(),
-            'prop_type':    prop_labels.get(int(prop_type), "Property"),
-            'furnish':      furnish_labels.get(int(furnish), ""),
-            'sqft':         int(sqft),
-            'beds':         int(beds),
-            'baths':        int(baths),
-            'amenities':    amenities,
+            'price': fmt(final_price),
+            'rate': f"₹{int((final_price * 100000) / sqft):,}/sqft",
+            'tier_label': location_label,
+            'city': city_display.title(),
+            'status': 'Success'
         })
 
-    except ValueError as e:
-        return jsonify({'error': f'Invalid input: {str(e)}'}), 400
     except Exception as e:
-        return jsonify({'error': f'Prediction failed: {str(e)}'}), 500
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(debug=True)
