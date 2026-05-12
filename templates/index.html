@@ -3,50 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bharat Estate AI Dashboard</title>
+    <title>Bharat Estate AI | Prediction Dashboard</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --bg: #05070a; --panel: #0d1117; --accent: #3b82f6; --success: #10b981; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #e6edf3; margin: 0; display: flex; height: 100vh; }
-        .sidebar { width: 420px; background: var(--panel); border-right: 1px solid #30363d; padding: 30px; display: flex; flex-direction: column; z-index: 1000; }
-        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 35px; }
-        .logo-box { width: 40px; height: 40px; background: var(--accent); border-radius: 8px; display: grid; place-items: center; font-size: 20px; }
+        :root { --bg: #030712; --card: #111827; --accent: #3b82f6; --text: #f9fafb; }
+        body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; height: 100vh; }
         
-        .form-group { margin-bottom: 20px; }
-        label { font-size: 11px; text-transform: uppercase; color: #8b949e; letter-spacing: 1px; display: block; margin-bottom: 8px; }
-        input, select { width: 100%; background: #161b22; border: 1px solid #30363d; padding: 12px; color: white; border-radius: 6px; box-sizing: border-box; }
+        /* Dashboard Sidebar */
+        .dashboard-side { width: 440px; background: var(--card); border-right: 1px solid #1f2937; padding: 40px; display: flex; flex-direction: column; box-shadow: 10px 0 30px rgba(0,0,0,0.5); z-index: 100; }
+        .logo-area { display: flex; align-items: center; gap: 15px; margin-bottom: 40px; }
+        .logo-icon { background: linear-gradient(135deg, #3b82f6, #8b5cf6); padding: 10px; border-radius: 12px; font-size: 20px; }
         
-        .btn-main { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 6px; font-weight: 700; cursor: pointer; width: 100%; transition: 0.2s; }
-        .btn-main:hover { background: #2563eb; }
+        .input-group { margin-bottom: 25px; }
+        label { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #6b7280; display: block; margin-bottom: 10px; }
+        input, select { width: 100%; background: #1f2937; border: 1px solid #374151; padding: 14px; color: white; border-radius: 12px; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--accent); box-shadow: 0 0 10px rgba(59,130,246,0.3); }
+        
+        .predict-btn { background: var(--accent); color: white; border: none; padding: 18px; border-radius: 14px; font-weight: 800; cursor: pointer; width: 100%; font-size: 14px; letter-spacing: 1px; transition: 0.3s; }
+        .predict-btn:hover { background: #2563eb; transform: scale(1.02); }
 
-        #res-box { margin-top: 30px; padding: 25px; border-radius: 8px; border: 1px dashed #30363d; display: none; background: rgba(59,130,246,0.05); }
-        .price-val { font-size: 36px; font-weight: 800; color: var(--success); }
+        /* Output Panel */
+        #output-panel { margin-top: 35px; padding: 25px; background: rgba(59,130,246,0.05); border: 1px solid rgba(59,130,246,0.2); border-radius: 20px; display: none; animation: fadeIn 0.5s ease-out; }
+        .price-hero { font-size: 42px; font-weight: 800; color: #10b981; margin: 10px 0; }
         #map { flex-grow: 1; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-<div class="sidebar">
-    <div class="header"><div class="logo-box">AI</div> <h2 style="margin:0">Bharat Estate</h2></div>
+<div class="dashboard-side">
+    <div class="logo-area"><div class="logo-icon"><i class="fa-solid fa-house-laptop"></i></div> <h2 style="margin:0">Bharat AI</h2></div>
     
-    <div class="form-group"><label>Area (Sq Ft)</label><input type="number" id="sqft" value="1200"></div>
-    <div style="display:flex; gap:15px">
-        <div class="form-group" style="flex:1"><label>Beds</label><input type="number" id="beds" value="2"></div>
-        <div class="form-group" style="flex:1"><label>Baths</label><input type="number" id="baths" value="2"></div>
+    <div class="input-group"><label>Property Area (Sq Ft)</label><input type="number" id="sqft" value="1500"></div>
+    <div style="display:flex; gap:20px">
+        <div class="input-group" style="flex:1"><label>BHK</label><input type="number" id="beds" value="3"></div>
+        <div class="input-group" style="flex:1"><label>Baths</label><input type="number" id="baths" value="2"></div>
     </div>
-    <div class="form-group">
+    <div class="input-group">
         <label>Property Class</label>
-        <select id="prop_type"><option value="0">Apartment</option><option value="1">House</option><option value="2">Villa</option></select>
+        <select id="prop_type"><option value="0">Apartment</option><option value="1">Independent House</option><option value="2">Luxury Villa</option></select>
     </div>
 
-    <button class="btn-main" onclick="getPrediction()"><i class="fa-solid fa-bolt"></i> ANALYZE LOCATION</button>
+    <button class="predict-btn" onclick="runAI()"><i class="fa-solid fa-wand-magic-sparkles"></i> GENERATE VALUATION</button>
 
-    <div id="res-box">
-        <div id="res-city" style="color:var(--accent); font-weight:700; margin-bottom:5px;"></div>
-        <div class="price-val" id="res-price"></div>
+    <div id="output-panel">
+        <div id="res-city" style="color:var(--accent); font-weight:700;"></div>
+        <div class="price-hero" id="res-price">--</div>
         <div id="res-rate" style="opacity:0.6; font-size:14px;"></div>
-        <div id="res-label" style="margin-top:15px; font-size:12px; color:#f0883e; background:rgba(240,136,62,0.1); padding:8px; border-radius:4px;"></div>
+        <div id="res-label" style="margin-top:20px; font-size:12px; color:#f59e0b; border-left: 3px solid #f59e0b; padding-left: 10px;"></div>
     </div>
 </div>
 
@@ -54,13 +59,13 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    var map = L.map('map').setView([23.18, 79.98], 13);
+    var map = L.map('map', {zoomControl: false}).setView([23.18, 79.98], 12);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-    var marker = L.marker([23.18, 79.98], {draggable:true}).addTo(map);
+    var marker = L.marker([23.18, 79.98], {draggable: true}).addTo(map);
 
-    async function getPrediction() {
-        const btn = document.querySelector('.btn-main');
-        btn.innerHTML = "CALCULATING...";
+    async function runAI() {
+        const btn = document.querySelector('.predict-btn');
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ANALYZING MARKET...';
         const pos = marker.getLatLng();
         
         try {
@@ -68,21 +73,19 @@
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    sqft: document.getElementById('sqft').value,
-                    beds: document.getElementById('beds').value,
-                    baths: document.getElementById('baths').value,
-                    prop_type: document.getElementById('prop_type').value,
+                    sqft: document.getElementById('sqft').value, beds: document.getElementById('beds').value,
+                    baths: document.getElementById('baths').value, prop_type: document.getElementById('prop_type').value,
                     lat: pos.lat, lng: pos.lng
                 })
             });
             const data = await response.json();
-            document.getElementById('res-box').style.display = 'block';
+            document.getElementById('output-panel').style.display = 'block';
             document.getElementById('res-price').innerText = data.price;
             document.getElementById('res-city').innerText = data.city;
             document.getElementById('res-rate').innerText = data.rate;
             document.getElementById('res-label').innerText = data.label;
-        } catch (e) { alert("Server connection failed."); }
-        finally { btn.innerHTML = '<i class="fa-solid fa-bolt"></i> ANALYZE LOCATION'; }
+        } catch (e) { alert("AI Service Offline"); }
+        finally { btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> GENERATE VALUATION'; }
     }
 </script>
 </body>
