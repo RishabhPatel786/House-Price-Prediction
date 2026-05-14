@@ -3,293 +3,242 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bharat Estate AI | Advanced Property Intelligence</title>
+  <title>Bharat Estate AI | Neural Property Intelligence</title>
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
   
   <style>
-    /* --- Modern UI Variables --- */
+    /* --- Futuristic UI Variables --- */
     :root {
-      --bg: #030712;
-      --glass: rgba(17, 24, 39, 0.75);
-      --glass-border: rgba(255, 255, 255, 0.08);
-      --accent: #3b82f6;
-      --accent-glow: rgba(59, 130, 246, 0.4);
-      --green: #10b981;
-      --text: #f9fafb;
-      --muted: #9ca3af;
+      --bg-dark: #020617;
+      --panel-glass: rgba(15, 23, 42, 0.65);
+      --border-glow: rgba(59, 130, 246, 0.3);
+      --neon-blue: #3b82f6;
+      --neon-green: #10b981;
+      --text-main: #f8fafc;
+      --text-dim: #94a3b8;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     
     body {
-      font-family: 'DM Sans', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      overflow: hidden; /* App-like fixed viewport */
+      font-family: 'JetBrains Mono', monospace; /* Professional tech-first typography */
+      background: var(--bg-dark);
+      color: var(--text-main);
       height: 100vh;
+      width: 100vw;
+      overflow: hidden;
       display: flex;
-      flex-direction: column;
     }
 
-    /* AI Moving Background */
-    body::before {
-      content: ''; position: fixed; inset: 0; z-index: -1; filter: blur(80px);
-      background: radial-gradient(circle at 20% 30%, #1e1b4b 0%, transparent 40%),
-                  radial-gradient(circle at 80% 70%, #1e3a8a 0%, transparent 40%);
+    /* Immersive Map Foundation */
+    #map-container {
+      position: absolute; inset: 0; z-index: 1;
+      filter: grayscale(0.4) brightness(0.6) contrast(1.1);
     }
-
-    /* --- Welcome Screen --- */
-    #welcome-screen {
-      position: fixed; inset: 0; background: var(--bg); z-index: 10000;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      transition: opacity 0.8s ease;
-    }
-    .loader-bar { width: 220px; height: 2px; background: #1f2937; margin-top: 25px; overflow: hidden; border-radius: 2px; }
-    .loader-progress { width: 0%; height: 100%; background: var(--accent); animation: load 1.6s ease-in-out forwards; }
-    @keyframes load { to { width: 100%; } }
-
-    header {
-      padding: 16px 35px;
-      display: flex; justify-content: space-between; align-items: center;
-      background: rgba(3, 7, 18, 0.4);
-      backdrop-filter: blur(15px);
-      border-bottom: 1px solid var(--glass-border);
-      z-index: 100;
-    }
-    .logo { font-family: 'Syne'; font-weight: 800; font-size: 22px; letter-spacing: -0.5px; }
-    .nav-pills { display: flex; gap: 8px; background: rgba(255,255,255,0.03); padding: 5px; border-radius: 14px; border: 1px solid var(--glass-border); }
-    .nav-pills a { padding: 8px 20px; color: var(--muted); text-decoration: none; font-size: 13px; border-radius: 10px; font-weight: 500; transition: 0.3s; }
-    .nav-pills a.active { background: var(--accent); color: white; box-shadow: 0 4px 15px var(--accent-glow); }
-
-    .main-layout { display: flex; flex: 1; overflow: hidden; }
-
-    /* --- Sophisticated Sidebar --- */
-    .sidebar {
-      width: 440px;
-      background: var(--glass);
-      backdrop-filter: blur(35px);
-      border-right: 1px solid var(--glass-border);
-      padding: 35px;
-      overflow-y: auto;
-      z-index: 50;
-      box-shadow: 20px 0 50px rgba(0,0,0,0.3);
-    }
-
-    .section-tag { font-size: 10px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; display: block; }
-    
-    .field { margin-bottom: 25px; }
-    label { display: block; font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 10px; text-transform: uppercase; }
-    input, select {
-      width: 100%; padding: 15px; background: rgba(255,255,255,0.04);
-      border: 1px solid var(--glass-border); border-radius: 14px; color: white;
-      font-size: 14px; outline: none; transition: 0.3s;
-    }
-    input:focus, select:focus { border-color: var(--accent); background: rgba(255,255,255,0.07); }
-
-    .btn-generate {
-      width: 100%; padding: 18px; background: var(--accent); border: none;
-      border-radius: 16px; color: white; font-family: 'Syne'; font-weight: 800;
-      cursor: pointer; font-size: 15px; margin-top: 10px;
-      box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
-    }
-    .btn-generate:hover { transform: translateY(-2px); box-shadow: 0 15px 35px rgba(59, 130, 246, 0.5); }
-
-    /* --- Interactive Prediction Result --- */
-    #result-panel {
-      display: none; margin-top: 35px; padding: 25px;
-      background: rgba(16, 185, 129, 0.08);
-      border-radius: 24px; border: 1px solid rgba(16, 185, 129, 0.2);
-      animation: reveal 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    @keyframes reveal { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-    .price-value { font-family: 'Syne'; font-size: 42px; color: var(--green); margin: 12px 0; font-weight: 800; }
-    .locality-text { font-size: 15px; font-weight: 600; color: var(--text); }
-
-    .map-zone { flex: 1; position: relative; }
     #map { height: 100%; width: 100%; }
 
-    /* Custom Geocoder Styles */
-    .leaflet-control-geocoder { 
-      border-radius: 14px !important; 
-      background: #0e1525 !important; 
-      border: 1px solid var(--glass-border) !important; 
-      box-shadow: 0 15px 45px rgba(0,0,0,0.5) !important;
-      margin: 25px !important;
-      width: 380px !important;
+    /* Floating Glass Modules */
+    .floating-hud {
+      position: absolute; z-index: 10;
+      backdrop-filter: blur(16px) saturate(180%);
+      background: var(--panel-glass);
+      border: 1px solid var(--border-glow);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(59,130,246,0.05);
     }
-    .leaflet-control-geocoder-form input { color: white !important; font-size: 14px !important; padding: 12px !important; }
 
-    #error-toast { position: fixed; top: 40px; left: 50%; transform: translateX(-50%); background: #ef4444; color: white; padding: 15px 30px; border-radius: 15px; display: none; z-index: 10001; font-weight: 700; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+    /* Header Module */
+    .hub-header {
+      top: 20px; left: 20px; right: 20px;
+      height: 70px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 30px;
+    }
+    .brand { font-family: 'Syne'; font-weight: 800; font-size: 24px; letter-spacing: -1px; }
+    .brand span { color: var(--neon-blue); text-shadow: 0 0 15px var(--neon-blue); }
+
+    /* Control Intelligence Module */
+    .control-module {
+      top: 110px; left: 20px; bottom: 20px; width: 380px;
+      display: flex; flex-direction: column; gap: 20px;
+    }
+
+    /* Result Hub Module */
+    .result-module {
+      top: 110px; right: 20px; width: 400px;
+      display: none; /* Hidden until prediction */
+      animation: floatIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    @keyframes floatIn { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
+
+    .module-title { font-size: 10px; font-weight: 800; color: var(--neon-blue); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; }
+    
+    .input-field { margin-bottom: 15px; }
+    label { font-size: 9px; color: var(--text-dim); display: block; margin-bottom: 8px; }
+    input, select {
+      width: 100%; padding: 14px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glow);
+      border-radius: 12px; color: white; font-family: inherit; font-size: 13px; outline: none;
+    }
+    input:focus { border-color: var(--neon-blue); box-shadow: 0 0 12px var(--border-glow); }
+
+    .action-btn {
+      width: 100%; padding: 18px; background: linear-gradient(135deg, var(--neon-blue), #1e40af);
+      border: none; border-radius: 16px; color: white; font-weight: 800; font-size: 14px;
+      cursor: pointer; text-transform: uppercase; letter-spacing: 1px;
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+    }
+    .action-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(59, 130, 246, 0.5); }
+
+    .price-display { font-family: 'Syne'; font-size: 48px; font-weight: 800; color: var(--neon-green); text-shadow: 0 0 20px rgba(16, 185, 129, 0.4); margin: 10px 0; }
+    .location-tag { font-size: 14px; color: var(--text-main); font-weight: 500; border-left: 2px solid var(--neon-blue); padding-left: 12px; }
+
+    /* Custom Geocoder */
+    .leaflet-control-geocoder { background: var(--panel-glass) !important; backdrop-filter: blur(10px) !important; border: 1px solid var(--border-glow) !important; border-radius: 14px !important; margin: 0 !important; width: 100% !important; }
+    .leaflet-control-geocoder-form input { color: white !important; font-family: inherit !important; }
+
+    /* Welcome Overlay */
+    #overlay { position: fixed; inset: 0; background: var(--bg-dark); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.8s; }
+    .scanline { width: 300px; height: 1px; background: var(--neon-blue); box-shadow: 0 0 20px var(--neon-blue); animation: scan 2s linear infinite; }
+    @keyframes scan { 0% { transform: translateY(-50px); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateY(50px); opacity: 0; } }
   </style>
 </head>
 <body>
 
-  <div id="welcome-screen">
-    <div style="font-size: 55px;">🏰</div>
-    <h1 style="font-family: 'Syne'; font-size: 36px; margin-top: 15px;">Bharat Estate <span style="color: var(--accent);">AI</span></h1>
-    <div class="loader-bar"><div class="loader-progress"></div></div>
+  <div id="overlay">
+    <h1 style="font-family: 'Syne'; font-size: 32px; letter-spacing: 10px; text-transform: uppercase;">Initializing<span>_</span></h1>
+    <div class="scanline"></div>
   </div>
 
-  <header>
-    <div class="logo">BHARAT ESTATE <span style="color: var(--accent);">AI</span></div>
-    <div class="nav-pills">
-      <a href="#" class="active">Intelligence</a>
-      <a href="#map">Market Map</a>
+  <header class="floating-hud hub-header">
+    <div class="brand">BHARAT ESTATE <span>AI</span></div>
+    <div style="display: flex; gap: 20px; font-size: 11px; color: var(--text-dim);">
+      <span><i class="fa fa-signal"></i> NEURAL NETWORK ACTIVE</span>
+      <span><i class="fa fa-database"></i> 2026 INDEX LOADED</span>
     </div>
   </header>
 
-  <div class="main-layout">
-    <aside class="sidebar">
-      <span class="section-tag">Property Config</span>
-      
-      <form id="intelligenceForm">
-        <div class="field">
-          <label><i class="fa fa-ruler-combined"></i> Living Area (sq. ft.)</label>
-          <input type="number" name="sqft" id="sqft" value="1200" required>
-        </div>
-        
-        <div style="display: flex; gap: 20px;">
-          <div class="field" style="flex: 1;">
-            <label><i class="fa fa-bed"></i> Bedrooms</label>
-            <input type="number" name="beds" id="beds" value="2" required>
-          </div>
-          <div class="field" style="flex: 1;">
-            <label><i class="fa fa-bath"></i> Baths</label>
-            <input type="number" name="baths" id="baths" value="2" required>
-          </div>
-        </div>
-
-        <div class="field">
-          <label><i class="fa fa-city"></i> Architectural Class</label>
-          <select name="prop_type">
-            <option value="0">Urban Apartment</option>
-            <option value="1">Modern Independent House</option>
-            <option value="2">Signature Luxury Villa</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label><i class="fa fa-couch"></i> Furnishing Grade</label>
-          <select name="furnish">
-            <option value="0">Base / Unfurnished</option>
-            <option value="1">Executive Semi-Furnished</option>
-            <option value="2">Elite Fully-Furnished</option>
-          </select>
-        </div>
-
-        <input type="hidden" name="lat" id="lat">
-        <input type="hidden" name="lng" id="lng">
-        <input type="hidden" name="manual_city" id="manual_city">
-        
-        <button type="submit" class="btn-generate" id="runBtn">
-          RUN AI PREDICTION <i class="fa fa-bolt" style="margin-left: 10px; font-size: 13px;"></i>
-        </button>
-      </form>
-
-      <div id="result-panel">
-        <div style="font-size: 10px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">Market Valuation</div>
-        <div class="price-value" id="res-val">₹0.00 L</div>
-        <div class="locality-text" id="res-loc">---</div>
-        <div id="res-tier" style="font-size: 11px; color: var(--accent); font-weight: 900; margin-top: 10px; text-transform: uppercase;"></div>
+  <aside class="floating-hud control-module">
+    <div class="module-title">Property Matrix</div>
+    
+    <div id="geocoder-anchor"></div> <form id="aiForm">
+      <div class="input-field">
+        <label>Spatial Volume (sq.ft)</label>
+        <input type="number" name="sqft" id="sqft" value="1200" required>
       </div>
-    </aside>
+      
+      <div style="display: flex; gap: 15px;">
+        <div class="input-field" style="flex: 1;">
+          <label>Units: Bed</label>
+          <input type="number" name="beds" id="beds" value="2" required>
+        </div>
+        <div class="input-field" style="flex: 1;">
+          <label>Units: Bath</label>
+          <input type="number" name="baths" id="baths" value="2" required>
+        </div>
+      </div>
 
-    <div class="map-zone">
-      <div id="map"></div>
+      <div class="input-field">
+        <label>Structure Grade</label>
+        <select name="prop_type">
+          <option value="0">Urban Apartment</option>
+          <option value="1">Modern Villa</option>
+          <option value="2">Signature Estate</option>
+        </select>
+      </div>
+
+      <div class="input-field">
+        <label>Finishing Tier</label>
+        <select name="furnish">
+          <option value="0">Base Shell</option>
+          <option value="1">Smart Semi</option>
+          <option value="2">Elite Premium</option>
+        </select>
+      </div>
+
+      <input type="hidden" name="lat" id="lat"><input type="hidden" name="lng" id="lng">
+      <input type="hidden" name="manual_city" id="manual_city">
+      
+      <button type="submit" class="action-btn" id="runBtn">Compute Valuation</button>
+    </form>
+  </aside>
+
+  <section id="result-hud" class="floating-hud result-module">
+    <div class="module-title">Intelligence Report</div>
+    <div id="res-val" class="price-display">₹0.00 L</div>
+    <div id="res-loc" class="location-tag">---</div>
+    <div id="res-tier" style="margin-top: 20px; font-size: 10px; color: var(--neon-blue); font-weight: 800;"></div>
+    
+    <div style="margin-top: 25px; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px dashed var(--border-glow);">
+      <p style="font-size: 10px; line-height: 1.6; color: var(--text-dim);">The valuation engine utilizes deep regression models cross-referenced with Indian real-time locality indices.</p>
     </div>
-  </div>
+  </section>
 
-  <div id="error-toast"></div>
+  <div id="map-container">
+    <div id="map"></div>
+  </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
   <script>
-    // --- Map Systems Initialization ---
-    const map = L.map('map', { zoomControl: false }).setView([22.9734, 78.6569], 5);
+    // Initialize Dark Interactive Map
+    const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([22.9734, 78.6569], 5);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
-    let marker;
 
-    // --- India-Centric Intelligence Search ---
     const geocoder = L.Control.geocoder({
       defaultMarkGeocode: false,
-      placeholder: "Search Locality (e.g., Vijay Nagar Jabalpur)",
+      placeholder: "SCAN LOCALITY...",
       collapsed: false,
-      geocoder: L.Control.Geocoder.nominatim({
-        geocodingQueryParams: { 
-          countrycodes: 'in', 
-          addressdetails: 1, 
-          viewbox: '68,7,97,35', 
-          bounded: 1 
-        }
-      })
+      geocoder: L.Control.Geocoder.nominatim({ geocodingQueryParams: { countrycodes: 'in', addressdetails: 1, viewbox: '68,7,97,35', bounded: 1 } })
     }).on('markgeocode', function(e) {
-      const latlng = e.geocode.center;
-      const exactName = e.geocode.name; // Full locality string
-      
-      map.setView(latlng, 15);
-      lockPosition(latlng, exactName);
+      map.setView(e.geocode.center, 14);
+      lockData(e.geocode.center, e.geocode.name);
     }).addTo(map);
 
-    function lockPosition(latlng, name = "") {
+    // Reparent geocoder to the sidebar module for cleaner UI
+    document.getElementById('geocoder-anchor').appendChild(geocoder.getContainer());
+
+    let marker;
+    function lockData(latlng, name = "") {
       if (marker) map.removeLayer(marker);
-      marker = L.marker(latlng).addTo(map);
+      marker = L.circleMarker(latlng, { radius: 8, color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.8 }).addTo(map);
       document.getElementById('lat').value = latlng.lat;
       document.getElementById('lng').value = latlng.lng;
-      // FIX: Locality-Lock ensures the exact search result is used
       document.getElementById('manual_city').value = name;
     }
 
-    map.on('click', e => lockPosition(e.latlng, ""));
+    map.on('click', e => lockData(e.latlng));
 
-    // Welcome Screen Flow
     window.addEventListener('load', () => {
       setTimeout(() => {
-        const ws = document.getElementById('welcome-screen');
-        ws.style.opacity = '0';
-        setTimeout(() => ws.style.display = 'none', 800);
-      }, 1600);
+        document.getElementById('overlay').style.opacity = '0';
+        setTimeout(() => document.getElementById('overlay').style.display = 'none', 800);
+      }, 1800);
     });
 
-    // --- Core Intelligence Submission ---
-    document.getElementById('intelligenceForm').onsubmit = async (e) => {
+    document.getElementById('aiForm').onsubmit = async (e) => {
       e.preventDefault();
-      if (!document.getElementById('lat').value) {
-        triggerToast("LOCATION DATA MISSING: Pin your property on the map.");
-        return;
-      }
+      if (!document.getElementById('lat').value) return alert("Spatial Coordinates Missing.");
       
       const btn = document.getElementById('runBtn');
-      btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> CALCULATING CORE...';
+      btn.innerText = "PROCESSING...";
       
-      const fd = new FormData(e.target);
-      try {
-        const res = await fetch('/predict', { method: 'POST', body: fd });
-        const data = await res.json();
-        
-        if (data.error) {
-            triggerToast(data.error);
-        } else {
-            const panel = document.getElementById('result-panel');
-            panel.style.display = 'block';
-            document.getElementById('res-val').innerText = data.price;
-            document.getElementById('res-loc').innerText = data.city;
-            document.getElementById('res-tier').innerText = data.tier_label;
-            panel.scrollIntoView({ behavior: 'smooth' });
-        }
-      } catch (err) { triggerToast("CONNECTION ERROR: Intelligence engine offline."); }
-      btn.innerHTML = 'RUN AI PREDICTION <i class="fa fa-bolt" style="margin-left: 10px;"></i>';
+      const res = await fetch('/predict', { method: 'POST', body: new FormData(e.target) });
+      const data = await res.json();
+      
+      if (data.error) alert(data.error);
+      else {
+        const hud = document.getElementById('result-hud');
+        hud.style.display = 'block';
+        document.getElementById('res-val').innerText = data.price;
+        document.getElementById('res-loc').innerText = data.city;
+        document.getElementById('res-tier').innerText = data.tier_label;
+      }
+      btn.innerText = "Compute Valuation";
     };
-
-    function triggerToast(m) {
-      const t = document.getElementById('error-toast');
-      t.innerText = m; t.style.display = 'block';
-      setTimeout(() => t.style.display = 'none', 5000);
-    }
   </script>
 </body>
 </html>
