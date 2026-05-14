@@ -2,83 +2,247 @@ from flask import Flask, render_template, request, jsonify
 import pickle
 import pandas as pd
 import requests
+import os
 
 app = Flask(__name__)
+
+# ============================================================
+# Auto Create Model if Missing
+# ============================================================
+
+if not os.path.exists('model.pkl'):
+    import model
 
 with open('model.pkl', 'rb') as f:
     model = pickle.load(f)
 
-PRIME_CITIES = ['mumbai', 'delhi', 'bangalore', 'bengaluru', 'hyderabad', 'chennai', 'kolkata', 'pune', 'gurgaon', 'noida']
-TIER2_CITIES = ['jabalpur', 'bhopal', 'gwalior', 'indore', 'jaipur', 'lucknow', 'nagpur', 'patna', 'ranchi']
+# ============================================================
+# City Tier Mapping
+# ============================================================
+
+PRIME_CITIES = [
+    'mumbai', 'delhi', 'bangalore', 'bengaluru',
+    'hyderabad', 'pune', 'chennai',
+    'kolkata', 'gurgaon', 'gurugram'
+]
+
+TIER2_CITIES = [
+    'jabalpur', 'bhopal', 'indore',
+    'raipur', 'nagpur', 'lucknow',
+    'kanpur', 'patna'
+]
+
+# ============================================================
+# Home Route
+# ============================================================
 
 @app.route('/')
 def home():
     return render_template('index.html')
 
+# ============================================================
+# Predict Route
+# ============================================================
+
 @app.route('/predict', methods=['POST'])
 def predict():
-    try:
-        sqft = float(request.form.get('sqft', 1))
-        beds = float(request.form.get('beds', 1))
-        baths = float(request.form.get('baths', 1))
-        prop_type = int(request.form.get('prop_type', 0))
-        furnish = int(request.form.get('furnish', 0))
-        lat = request.form.get('lat', '')
-        lng = request.form.get('lng', '')
-        # FIX: Capture the exact name from the search bar
-        manual_city = request.form.get('manual_city', '')
 
-        if sqft / beds < 200:
-            return jsonify({'error': f'Architectural Error: {int(beds)} beds in {int(sqft)} sqft is not possible.'}), 400
+    try:
+
+        sqft = float(request.form.get('sqft'))
+        beds = float(request.form.get('beds'))
+        baths = float(request.form.get('baths'))
+        prop_type = float(request.form.get('prop_type'))
+        furnish = float(request.form.get('furnish'))
+
+        lat = request.form.get('lat')
+        lng = request.form.get('lng')
+
+        # ====================================================
+        # Validation
+        # ====================================================
+
+        if sqft <= 0:
+            return jsonify({
+                'error': 'Area must be greater than 0'
+            }), 400
+
+        # ====================================================
+        # Detect Tier
+        # ====================================================
 
         tier = 0
-        city_display = manual_city or "Rural Area"
+        city_name = "Unknown Area"
+        tier_label = "Rural Area"
 
-        # Even if we have a manual city name, we still need the tier for the model
-        if lat and lng:
-            try:
-                headers = {'User-Agent': 'BharatEstateAI_v5'}
-                geo_url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lng}&countrycodes=in&addressdetails=1"
-                resp = requests.get(geo_url, headers=headers, timeout=5).json()
-                
-                if resp.get('address', {}).get('country_code') != 'in':
-                    return jsonify({'error': 'Location Error: Please select a location within India.'}), 400
+        try:
 
-                addr_full = resp.get('display_name', '').lower()
-                
-                # If no manual city was passed (user clicked map instead of searching), detect it
-                if not manual_city:
-                    addr_details = resp.get('address', {})
-                    locality = addr_details.get('suburb') or addr_details.get('neighbourhood') or addr_details.get('village')
-                    city = addr_details.get('city') or addr_details.get('town') or addr_details.get('state_district')
-                    city_display = f"{locality}, {city}" if locality and city else (locality or city or "Detected Area")
+            if lat and lng:
 
-                if any(c in addr_full for c in PRIME_CITIES): tier = 2
-                elif any(c in addr_full for c in TIER2_CITIES): tier = 1
-            except: pass
+                url = (
+                    f"https://nominatim.openstreetmap.org/reverse"
+                    f"?format=json&lat={lat}&lon={lng}"
+                )
 
-        # Prediction & Multipliers
-        features = pd.DataFrame([[sqft, beds, baths, tier, prop_type, furnish]], columns=["sqft","beds","baths","tier","prop_type","furnish"])
-        base_price = float(model.predict(features)[0])
+                response = requests.get(
+                    url,
+                    headers={
+                        "User-Agent":
+                        "HousePricePredictionAI"
+                    },
+                    timeout=5
+                )
 
-        if tier == 0: base_price *= 0.60
-        if tier == 2: base_price *= 1.45
-        if prop_type == 1: base_price *= 1.20
-        if prop_type == 2: base_price *= 1.55
-        if furnish == 1: base_price *= 1.12
-        if furnish == 2: base_price *= 1.25
+                data = response.json()
 
-        def fmt(val): return f"₹{val/100:.2f} Cr" if val >= 100 else f"₹{val:.1f} L"
+                address = data.get('display_name', '').lower()
+
+                city_name = (
+                    data.get('address', {})
+                    .get('city', 'Selected Area')
+                )
+
+                if any(
+                    city in address
+                    for city in PRIME_CITIES
+                ):
+                    tier = 2
+                    tier_label = "Prime Metro"
+
+                elif any(
+                    city in address
+                    for city in TIER2_CITIES
+                ):
+                    tier = 1
+                    tier_label = "Tier-2 City"
+
+                else:
+                    tier = 0
+                    tier_label = "Small Town"
+
+        except:
+            pass
+
+        # ====================================================
+        # Feature Engineering
+        # ====================================================
+
+        luxury_score = (
+            (tier * 2) +
+            (prop_type * 2) +
+            furnish
+        )
+
+        room_density = (
+            sqft /
+            (beds + baths)
+        )
+
+        cols = [
+            "sqft",
+            "beds",
+            "baths",
+            "tier",
+            "prop_type",
+            "furnish",
+            "luxury_score",
+            "room_density"
+        ]
+
+        features = pd.DataFrame([[
+            sqft,
+            beds,
+            baths,
+            tier,
+            prop_type,
+            furnish,
+            luxury_score,
+            room_density
+        ]], columns=cols)
+
+        # ====================================================
+        # Prediction
+        # ====================================================
+
+        base_price = float(
+            model.predict(features)[0]
+        )
+
+        base_price = max(base_price, 3)
+        base_price = min(base_price, 2500)
+
+        low = base_price * 0.90
+        high = base_price * 1.10
+
+        # ====================================================
+        # Market Labels
+        # ====================================================
+
+        if base_price < 25:
+            market_status = "Affordable Housing"
+
+        elif base_price < 80:
+            market_status = "Mid-Range Property"
+
+        elif base_price < 200:
+            market_status = "Premium Property"
+
+        else:
+            market_status = "Luxury Real Estate"
+
+        # ====================================================
+        # Format Price
+        # ====================================================
+
+        def fmt(val):
+
+            if val >= 100:
+                return f"₹{val/100:.2f} Cr"
+
+            return f"₹{val:.1f} L"
+
+        rate_per_sqft = int(
+            (base_price * 100000) / sqft
+        )
 
         return jsonify({
+
             'price': fmt(base_price),
-            'price_low': fmt(base_price * 0.92),
-            'price_high': fmt(base_price * 1.08),
-            'city': city_display,
-            'tier_label': ["Rural Area", "Tier-2 City", "Metro City"][tier]
+            'price_low': fmt(low),
+            'price_high': fmt(high),
+
+            'numeric_price': round(base_price, 2),
+
+            'rate': f"₹{rate_per_sqft:,}/sqft",
+
+            'market_status': market_status,
+
+            'tier': tier,
+            'tier_label': tier_label,
+
+            'city': city_name.title(),
+
+            'sqft': int(sqft),
+            'beds': int(beds),
+            'baths': int(baths)
+
         })
+
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+
+        return jsonify({
+            'error': str(e)
+        }), 500
+
+# ============================================================
+# Run
+# ============================================================
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('PORT', 5000))
+
+    app.run(
+        host='0.0.0.0',
+        port=port
+    )
+    
