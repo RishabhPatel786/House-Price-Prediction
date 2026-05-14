@@ -10,19 +10,18 @@ app = Flask(__name__)
 with open('model.pkl', 'rb') as f:
     model = pickle.load(f)
 
-# City lists for Tier Detection
+# Indian Metro and Tier-2 City Clusters
 PRIME_CITIES = ['mumbai', 'delhi', 'bangalore', 'bengaluru', 'hyderabad', 'chennai', 'kolkata', 'pune', 'gurgaon', 'noida']
 TIER2_CITIES = ['jabalpur', 'bhopal', 'gwalior', 'indore', 'jaipur', 'lucknow', 'nagpur', 'patna', 'ranchi']
 
 @app.route('/')
 def home():
-    """Renders the main dashboard"""
     return render_template('index.html')
 
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-        # 1. Parse Inputs from the Advanced Sidebar
+        # 1. Parse Inputs
         sqft      = float(request.form.get('sqft', 1))
         beds      = float(request.form.get('beds', 1))
         baths     = float(request.form.get('baths', 1))
@@ -31,72 +30,61 @@ def predict():
         lat       = request.form.get('lat', '')
         lng       = request.form.get('lng', '')
 
-        # 2. BUG FIX: ILLOGICAL CONFIGURATION CHECK
-        # Prevents impossible inputs like 10 bedrooms in a small flat.
+        # 2. Logistical Sanity Check
         if sqft / beds < 200:
             return jsonify({
                 'error': f'Architectural Error: {int(beds)} bedrooms in {int(sqft)} sq.ft. is not feasible.'
             }), 400
 
-        # 3. Geo-Tier Detection via Nominatim
+        # 3. India-Only Tier Detection
         tier = 0
         city_display = "Rural / Small Town"
         if lat and lng:
             try:
-                headers = {'User-Agent': 'BharatEstateAI_Advanced_v2'}
-                geo_url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lng}"
+                headers = {'User-Agent': 'BharatEstateAI_Final_v3'}
+                geo_url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lng}&countrycodes=in"
                 resp = requests.get(geo_url, headers=headers, timeout=5).json()
-                addr = resp.get('display_name', '').lower()
                 
-                # Logic to determine city name for display
-                addr_details = resp.get('address', {})
-                city_display = addr_details.get('city') or addr_details.get('state_district') or "Detected Area"
+                # Enforce India-only results
+                if resp.get('address', {}).get('country_code') != 'in':
+                    return jsonify({'error': 'Location Error: Please select a location within India.'}), 400
+
+                addr = resp.get('display_name', '').lower()
+                city_display = resp.get('address', {}).get('city') or resp.get('address', {}).get('state_district') or "Detected Area"
                 
                 if any(c in addr for c in PRIME_CITIES):
-                    tier = 2 # Metro
+                    tier = 2
                 elif any(c in addr for c in TIER2_CITIES):
-                    tier = 1 # Tier-2
-            except Exception:
-                pass
+                    tier = 1
+            except Exception: pass
 
-        # 4. Model Prediction
+        # 4. Model Prediction & Realism Multipliers
         cols = ["sqft", "beds", "baths", "tier", "prop_type", "furnish"]
         features = pd.DataFrame([[sqft, beds, baths, tier, prop_type, furnish]], columns=cols)
         base_price = float(model.predict(features)[0])
 
-        # 5. ADVANCED WEIGHTING (Fixes Rural vs City & Logic Bugs)
-        # Apply Tier Multipliers (Manual adjustment to ensure distinct pricing)
-        if tier == 0: base_price *= 0.60  # Rural/Village: 40% Cheaper
-        if tier == 2: base_price *= 1.45  # Metro/Prime: 45% Premium
-        
-        # Property type impact (Manual weights for responsiveness)
-        if prop_type == 1: base_price *= 1.20  # Independent House +20%
-        if prop_type == 2: base_price *= 1.55  # Luxury Villa +55%
-        
-        # Furnishing impact
-        if furnish == 1: base_price *= 1.12   # Semi-furnished +12%
-        if furnish == 2: base_price *= 1.25   # Fully-furnished +25%
+        # Manual weights for distinct Pricing
+        if tier == 0: base_price *= 0.60  # Rural discount
+        if tier == 2: base_price *= 1.45  # Metro premium
+        if prop_type == 1: base_price *= 1.20 # House
+        if prop_type == 2: base_price *= 1.55 # Villa
+        if furnish == 1: base_price *= 1.12 # Semi
+        if furnish == 2: base_price *= 1.25 # Full
 
-        # Formatting Function
         def fmt(val):
-            if val >= 100:
-                return f"₹{val/100:.2f} Cr"
-            return f"₹{val:.1f} L"
+            return f"₹{val/100:.2f} Cr" if val >= 100 else f"₹{val:.1f} L"
 
-        # 6. Final JSON Response
         return jsonify({
             'price': fmt(base_price),
-            'price_low': fmt(base_price * 0.92),  # Lower confidence bound
-            'price_high': fmt(base_price * 1.08), # Upper confidence bound
+            'price_low': fmt(base_price * 0.92),
+            'price_high': fmt(base_price * 1.08),
             'rate': f"₹{int((base_price * 100000) / sqft):,}/sqft",
             'city': city_display,
-            'tier_label': ["Rural / Small Town", "Tier-2 City", "Metro / Prime City"][tier],
-            'status': 'success'
+            'tier_label': ["Rural Area", "Tier-2 City", "Metro / Prime City"][tier]
         })
 
     except Exception as e:
-        return jsonify({'error': f'Prediction Engine Error: {str(e)}'}), 500
+        return jsonify({'error': f'Engine Error: {str(e)}'}), 500
 
 if __name__ == '__main__':
-    # Running on local port 5000
     app.run(debug=True, port=5000)

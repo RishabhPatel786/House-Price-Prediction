@@ -3,133 +3,67 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bharat Estate AI | Advanced Property Intelligence</title>
+  <title>Bharat Estate AI | Precision Property Intelligence</title>
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
   
   <style>
     :root {
-      --bg: #030712;
-      --glass: rgba(17, 24, 39, 0.7);
-      --glass-border: rgba(255, 255, 255, 0.08);
-      --accent: #3b82f6;
-      --accent-glow: rgba(59, 130, 246, 0.5);
-      --green: #10b981;
-      --text: #f9fafb;
-      --muted: #9ca3af;
+      --bg: #030712; --glass: rgba(17, 24, 39, 0.75); --accent: #3b82f6; 
+      --green: #10b981; --text: #f9fafb; --muted: #9ca3af; --border: rgba(255, 255, 255, 0.1);
     }
-
-    * { box-sizing: border-box; transition: all 0.2s ease-in-out; }
+    * { box-sizing: border-box; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
     
-    body {
-      font-family: 'DM Sans', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      margin: 0;
-      overflow: hidden; /* App-like feel */
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* Moving AI Background Gradient */
+    /* AI Animated Background */
     body::before {
-      content: '';
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      content: ''; position: fixed; inset: 0; z-index: -1; filter: blur(80px);
       background: radial-gradient(circle at 20% 30%, #1e1b4b 0%, transparent 40%),
                   radial-gradient(circle at 80% 70%, #1e3a8a 0%, transparent 40%);
-      z-index: -1;
-      filter: blur(80px);
     }
 
     /* Welcome Feature */
-    #welcome-screen {
-      position: fixed; inset: 0; background: var(--bg); z-index: 10000;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-    }
+    #welcome-screen { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.8s ease; }
     .loader-bar { width: 200px; height: 2px; background: #1f2937; margin-top: 20px; overflow: hidden; }
     .loader-progress { width: 0%; height: 100%; background: var(--accent); animation: load 1.5s ease-in-out forwards; }
     @keyframes load { to { width: 100%; } }
 
-    header {
-      padding: 12px 30px;
-      display: flex; justify-content: space-between; align-items: center;
-      background: rgba(3, 7, 18, 0.4);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--glass-border);
-      z-index: 100;
-    }
-    .logo { font-family: 'Syne'; font-weight: 800; font-size: 20px; letter-spacing: -0.5px; }
-    .nav-pill { display: flex; gap: 8px; background: rgba(255,255,255,0.03); padding: 5px; border-radius: 12px; border: 1px solid var(--glass-border); }
-    .nav-pill a { padding: 6px 15px; color: var(--muted); text-decoration: none; font-size: 13px; border-radius: 8px; font-weight: 500; }
-    .nav-pill a.active { background: var(--accent); color: white; box-shadow: 0 4px 12px var(--accent-glow); }
+    header { padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; background: rgba(3, 7, 18, 0.4); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); z-index: 100; }
+    .logo { font-family: 'Syne'; font-weight: 800; font-size: 22px; }
+    .nav-pill { display: flex; gap: 10px; background: rgba(255,255,255,0.03); padding: 5px; border-radius: 12px; }
+    .nav-pill a { padding: 7px 18px; color: var(--muted); text-decoration: none; font-size: 13px; border-radius: 8px; font-weight: 500; }
+    .nav-pill a.active { background: var(--accent); color: white; }
 
     .main-container { display: flex; flex: 1; overflow: hidden; }
-
-    /* Sidebar Sidebar */
-    .sidebar {
-      width: 420px;
-      background: var(--glass);
-      backdrop-filter: blur(20px);
-      border-right: 1px solid var(--glass-border);
-      padding: 30px;
-      overflow-y: auto;
-      z-index: 50;
-    }
-
-    .card-label { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 15px; display: block; }
+    .sidebar { width: 420px; background: var(--glass); backdrop-filter: blur(25px); border-right: 1px solid var(--border); padding: 30px; overflow-y: auto; }
     
     .input-group { margin-bottom: 20px; }
-    label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 8px; }
-    input, select {
-      width: 100%; padding: 14px; background: rgba(255,255,255,0.03);
-      border: 1px solid var(--glass-border); border-radius: 12px; color: white;
-      font-size: 14px; outline: none;
-    }
-    input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); }
+    label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+    input, select { width: 100%; padding: 14px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 12px; color: white; outline: none; }
+    input:focus { border-color: var(--accent); }
 
-    .btn-predict {
-      width: 100%; padding: 16px; background: var(--accent); border: none;
-      border-radius: 14px; color: white; font-family: 'Syne'; font-weight: 800;
-      cursor: pointer; font-size: 15px; margin-top: 10px;
-      box-shadow: 0 8px 24px rgba(59, 130, 246, 0.25);
-    }
-    .btn-predict:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(59, 130, 246, 0.4); }
+    .btn-predict { width: 100%; padding: 16px; background: var(--accent); border: none; border-radius: 14px; color: white; font-family: 'Syne'; font-weight: 800; cursor: pointer; }
+    
+    #result-section { display: none; margin-top: 30px; padding: 25px; background: rgba(16, 185, 129, 0.05); border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.2); animation: slideUp 0.5s ease; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .price-tag { font-family: 'Syne'; font-size: 38px; color: var(--green); font-weight: 800; margin: 10px 0; }
 
-    /* Prediction Result Panel */
-    #result-section {
-      display: none; margin-top: 30px; padding: 25px;
-      background: rgba(16, 185, 129, 0.05);
-      border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.2);
-      animation: slideUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-    .price-tag { font-family: 'Syne'; font-size: 38px; color: var(--green); margin: 10px 0; font-weight: 800; }
-
-    /* Map Area */
     .map-container { flex: 1; position: relative; }
     #map { height: 100%; width: 100%; }
-
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-
-    #toast { position: fixed; top: 30px; left: 50%; transform: translateX(-50%); background: #ef4444; color: white; padding: 12px 25px; border-radius: 12px; display: none; z-index: 10000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-weight: bold; }
-
-    /* Geocoder UI Adjustments */
-    .leaflet-control-geocoder { border-radius: 12px !important; background: var(--bg) !important; border: 1px solid var(--glass-border) !important; padding: 5px !important; margin-top: 20px !important; }
-    .leaflet-control-geocoder-form input { background: transparent !important; color: white !important; }
+    
+    /* Search Bar Design */
+    .leaflet-control-geocoder { background: var(--bg) !important; border-radius: 12px !important; border: 1px solid var(--border) !important; margin: 20px !important; }
+    .leaflet-control-geocoder-form input { color: white !important; }
+    #toast { position: fixed; top: 30px; left: 50%; transform: translateX(-50%); background: #ef4444; color: white; padding: 12px 25px; border-radius: 12px; display: none; z-index: 10000; font-weight: bold; }
   </style>
 </head>
 <body>
 
   <div id="welcome-screen">
-    <div style="font-size: 50px;">🏙️</div>
-    <h1 style="font-family: 'Syne'; font-size: 32px; letter-spacing: -1px; margin: 10px 0;">Bharat Estate <span style="color: var(--accent);">AI</span></h1>
+    <h1 style="font-family: 'Syne'; font-size: 32px;">Bharat Estate <span style="color: var(--accent);">AI</span></h1>
     <div class="loader-bar"><div class="loader-progress"></div></div>
   </div>
 
@@ -137,86 +71,46 @@
     <div class="logo">BHARAT ESTATE <span style="color: var(--accent);">AI</span></div>
     <div class="nav-pill">
       <a href="#" class="active">Predictor</a>
-      <a href="#dashboard">Market Insight</a>
-      <a href="#about">Intelligence</a>
+      <a href="#map">Market Map</a>
     </div>
-    <div style="font-size: 12px; color: var(--muted); font-weight: bold;">v2.5 PREDICT</div>
   </header>
 
   <div class="main-container">
     <aside class="sidebar">
-      <span class="card-label">Configuration</span>
-      
       <form id="priceForm">
-        <div class="input-group">
-          <label><i class="fa fa-expand-arrows-alt"></i> Total Built-up Area (sq. ft.)</label>
-          <input type="number" name="sqft" id="sqft" value="1200" required>
-        </div>
-        
+        <div class="input-group"><label>Total Area (sq. ft.)</label><input type="number" name="sqft" id="sqft" value="1200" required></div>
         <div style="display: flex; gap: 15px;">
-          <div class="input-group" style="flex: 1;">
-            <label><i class="fa fa-bed"></i> Bedrooms</label>
-            <input type="number" name="beds" id="beds" value="2" required>
-          </div>
-          <div class="input-group" style="flex: 1;">
-            <label><i class="fa fa-bath"></i> Baths</label>
-            <input type="number" name="baths" id="baths" value="2" required>
-          </div>
+          <div class="input-group" style="flex: 1;"><label>Beds</label><input type="number" name="beds" id="beds" value="2" required></div>
+          <div class="input-group" style="flex: 1;"><label>Baths</label><input type="number" name="baths" id="baths" value="2" required></div>
         </div>
-
         <div class="input-group">
-          <label><i class="fa fa-building"></i> Structure Type</label>
+          <label>Property Class</label>
           <select name="prop_type">
-            <option value="0">Premium Apartment</option>
-            <option value="1">Modern Ind. House</option>
-            <option value="2">Elite Luxury Villa</option>
+            <option value="0">Apartment / Flat</option>
+            <option value="1">Independent House</option>
+            <option value="2">Luxury Villa</option>
           </select>
         </div>
-
         <div class="input-group">
-          <label><i class="fa fa-couch"></i> Interior Status</label>
+          <label>Furnishing Status</label>
           <select name="furnish">
-            <option value="0">Raw / Unfurnished</option>
-            <option value="1">Smart Semi-Furnished</option>
-            <option value="2">Designer Fully-Furnished</option>
+            <option value="0">Unfurnished</option>
+            <option value="1">Semi-Furnished</option>
+            <option value="2">Fully Furnished</option>
           </select>
         </div>
-
-        <input type="hidden" name="lat" id="lat">
-        <input type="hidden" name="lng" id="lng">
-        
-        <button type="submit" class="btn-predict" id="subBtn">
-          GENERATE ANALYSIS <i class="fa fa-arrow-right" style="margin-left: 8px; font-size: 12px;"></i>
-        </button>
+        <input type="hidden" name="lat" id="lat"><input type="hidden" name="lng" id="lng">
+        <button type="submit" class="btn-predict" id="subBtn">RUN AI ANALYSIS</button>
       </form>
 
       <div id="result-section">
-        <div style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Estimated Value</div>
         <div class="price-tag" id="res-p">₹0.00 L</div>
-        <div style="font-size: 14px; font-weight: 500; color: var(--text);" id="res-city">---</div>
-        <div id="res-tier" style="font-size: 11px; color: var(--accent); font-weight: 800; margin-top: 8px; text-transform: uppercase;"></div>
-        
-        <div style="margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-           <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px;">
-             <div style="font-size: 9px; color: var(--muted);">LOW EST.</div>
-             <div id="res-low" style="font-weight: bold; font-size: 13px;">-</div>
-           </div>
-           <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px;">
-             <div style="font-size: 9px; color: var(--muted);">HIGH EST.</div>
-             <div id="res-high" style="font-weight: bold; font-size: 13px;">-</div>
-           </div>
-        </div>
-      </div>
-
-      <div style="margin-top: 40px; font-size: 11px; color: var(--muted); line-height: 1.6;">
-        <i class="fa fa-info-circle" style="color: var(--accent);"></i> 
-        Predictive analysis accounts for market volatility and regional demand multipliers. 
+        <div style="font-size: 14px; font-weight: bold;" id="res-city">---</div>
+        <div id="res-tier" style="font-size: 11px; color: var(--accent); font-weight: 800; margin-top: 5px; text-transform: uppercase;"></div>
       </div>
     </aside>
 
-    <div class="map-container">
-      <div id="map"></div>
-    </div>
+    <div class="map-container"><div id="map"></div></div>
   </div>
 
   <div id="toast"></div>
@@ -227,18 +121,18 @@
     // Initialize Map
     const map = L.map('map', { zoomControl: false }).setView([22.9734, 78.6569], 5);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
-    let marker;
 
-    // Search Geocoder
+    // --- FIX: INDIA-ONLY SEARCH ---
     const geocoder = L.Control.geocoder({
       defaultMarkGeocode: false,
-      placeholder: "Search location...",
-      collapsed: false
+      placeholder: "Search Indian Areas...",
+      collapsed: false,
+      geocoder: L.Control.Geocoder.nominatim({
+        geocodingQueryParams: { countrycodes: 'in', viewbox: '68,7,97,35', bounded: 1 }
+      })
     }).on('markgeocode', function(e) {
-      const latlng = e.geocode.center;
-      map.setView(latlng, 14);
-      setPoint(latlng);
+      map.setView(e.geocode.center, 14);
+      setPoint(e.geocode.center);
     }).addTo(map);
 
     function setPoint(latlng) {
@@ -247,55 +141,39 @@
       document.getElementById('lat').value = latlng.lat;
       document.getElementById('lng').value = latlng.lng;
     }
-
     map.on('click', e => setPoint(e.latlng));
 
-    // Welcome Feature Auto-dismiss
+    // Welcome Screen Delay
     window.addEventListener('load', () => {
       setTimeout(() => {
         const ws = document.getElementById('welcome-screen');
         ws.style.opacity = '0';
         setTimeout(() => ws.style.display = 'none', 800);
-      }, 1600);
+      }, 1500);
     });
 
-    // Form Prediction
     document.getElementById('priceForm').onsubmit = async (e) => {
       e.preventDefault();
-      if (!document.getElementById('lat').value) {
-        showToast("GEOLOCATION REQUIRED: Please pin a property location.");
-        return;
-      }
+      if (!document.getElementById('lat').value) { showToast("Please pin a location on the map!"); return; }
       
       const btn = document.getElementById('subBtn');
-      btn.innerHTML = '<i class="fa fa-circle-notch fa-spin"></i> CALCULATING...';
+      btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> CALCULATING...';
       
       const fd = new FormData(e.target);
-      try {
-        const res = await fetch('/predict', { method: 'POST', body: fd });
-        const data = await res.json();
-        
-        if (data.error) {
-            showToast(data.error);
-        } else {
-            const rs = document.getElementById('result-section');
-            rs.style.display = 'block';
-            document.getElementById('res-p').innerText = data.price;
-            document.getElementById('res-city').innerText = data.city;
-            document.getElementById('res-tier').innerText = data.tier_label;
-            document.getElementById('res-low').innerText = data.price_low;
-            document.getElementById('res-high').innerText = data.price_high;
-            rs.scrollIntoView({ behavior: 'smooth' });
-        }
-      } catch (err) { showToast("CORE ENGINE ERROR: Connection failed."); }
-      btn.innerHTML = 'GENERATE ANALYSIS <i class="fa fa-arrow-right" style="margin-left: 8px; font-size: 12px;"></i>';
+      const res = await fetch('/predict', { method: 'POST', body: fd });
+      const data = await res.json();
+      
+      if (data.error) { showToast(data.error); } 
+      else {
+        document.getElementById('result-section').style.display = 'block';
+        document.getElementById('res-p').innerText = data.price;
+        document.getElementById('res-city').innerText = data.city;
+        document.getElementById('res-tier').innerText = data.tier_label;
+      }
+      btn.innerText = "RUN AI ANALYSIS";
     };
 
-    function showToast(m) {
-      const t = document.getElementById('toast');
-      t.innerText = m; t.style.display = 'block';
-      setTimeout(() => t.style.display = 'none', 5000);
-    }
+    function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 5000); }
   </script>
 </body>
 </html>
