@@ -6,92 +6,97 @@ import os
 
 app = Flask(__name__)
 
-# Load model
+# Load the trained Linear Regression model
 with open('model.pkl', 'rb') as f:
     model = pickle.load(f)
 
-# City tier lists
+# City lists for Tier Detection
 PRIME_CITIES = ['mumbai', 'delhi', 'bangalore', 'bengaluru', 'hyderabad', 'chennai', 'kolkata', 'pune', 'gurgaon', 'noida']
 TIER2_CITIES = ['jabalpur', 'bhopal', 'gwalior', 'indore', 'jaipur', 'lucknow', 'nagpur', 'patna', 'ranchi']
 
 @app.route('/')
 def home():
+    """Renders the main dashboard"""
     return render_template('index.html')
 
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-        # Parse Inputs
+        # 1. Parse Inputs from the Advanced Sidebar
         sqft      = float(request.form.get('sqft', 1))
         beds      = float(request.form.get('beds', 1))
         baths     = float(request.form.get('baths', 1))
         prop_type = int(request.form.get('prop_type', 0))
         furnish   = int(request.form.get('furnish', 0))
-        amenities = request.form.get('amenities') == 'on'
         lat       = request.form.get('lat', '')
         lng       = request.form.get('lng', '')
 
-        # --- FIX 4: ILLOGICAL BEDROOM CHECK ---
-        # A bedroom needs at least 200 sqft of space usually.
+        # 2. BUG FIX: ILLOGICAL CONFIGURATION CHECK
+        # Prevents impossible inputs like 10 bedrooms in a small flat.
         if sqft / beds < 200:
-            return jsonify({'error': f'Impossible Config: {int(beds)} bedrooms in {int(sqft)} sqft would be too small to exist.'}), 400
+            return jsonify({
+                'error': f'Architectural Error: {int(beds)} bedrooms in {int(sqft)} sq.ft. is not feasible.'
+            }), 400
 
-        # Geo-Tier Detection
+        # 3. Geo-Tier Detection via Nominatim
         tier = 0
         city_display = "Rural / Small Town"
         if lat and lng:
             try:
-                headers = {'User-Agent': 'Mozilla/5.0'}
+                headers = {'User-Agent': 'BharatEstateAI_Advanced_v2'}
                 geo_url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lng}"
                 resp = requests.get(geo_url, headers=headers, timeout=5).json()
                 addr = resp.get('display_name', '').lower()
-                city_display = resp.get('address', {}).get('city') or resp.get('address', {}).get('state_district') or "Detected Area"
+                
+                # Logic to determine city name for display
+                addr_details = resp.get('address', {})
+                city_display = addr_details.get('city') or addr_details.get('state_district') or "Detected Area"
                 
                 if any(c in addr for c in PRIME_CITIES):
-                    tier = 2
+                    tier = 2 # Metro
                 elif any(c in addr for c in TIER2_CITIES):
-                    tier = 1
-            except:
+                    tier = 1 # Tier-2
+            except Exception:
                 pass
 
-        # Prediction
-        cols = ["sqft","beds","baths","tier","prop_type","furnish"]
+        # 4. Model Prediction
+        cols = ["sqft", "beds", "baths", "tier", "prop_type", "furnish"]
         features = pd.DataFrame([[sqft, beds, baths, tier, prop_type, furnish]], columns=cols)
         base_price = float(model.predict(features)[0])
 
-        # --- FIX 4 & 5: MANUAL WEIGHTING FOR REALISM ---
-        # Tier impact
-        if tier == 0: base_price *= 0.65  # Rural is 35% cheaper
-        if tier == 2: base_price *= 1.45  # Metro is 45% more expensive
-
-        # Property type impact
-        if prop_type == 1: base_price *= 1.20 # House premium
-        if prop_type == 2: base_price *= 1.50 # Villa premium
-
+        # 5. ADVANCED WEIGHTING (Fixes Rural vs City & Logic Bugs)
+        # Apply Tier Multipliers (Manual adjustment to ensure distinct pricing)
+        if tier == 0: base_price *= 0.60  # Rural/Village: 40% Cheaper
+        if tier == 2: base_price *= 1.45  # Metro/Prime: 45% Premium
+        
+        # Property type impact (Manual weights for responsiveness)
+        if prop_type == 1: base_price *= 1.20  # Independent House +20%
+        if prop_type == 2: base_price *= 1.55  # Luxury Villa +55%
+        
         # Furnishing impact
-        if furnish == 1: base_price *= 1.12 # Semi-furnished
-        if furnish == 2: base_price *= 1.25 # Fully-furnished
+        if furnish == 1: base_price *= 1.12   # Semi-furnished +12%
+        if furnish == 2: base_price *= 1.25   # Fully-furnished +25%
 
-        if amenities: base_price *= 1.15
-
-        # Floor price
-        base_price = max(base_price, 5.0) 
-
+        # Formatting Function
         def fmt(val):
-            return f"₹{val/100:.2f} Cr" if val >= 100 else f"₹{val:.1f} L"
+            if val >= 100:
+                return f"₹{val/100:.2f} Cr"
+            return f"₹{val:.1f} L"
 
+        # 6. Final JSON Response
         return jsonify({
             'price': fmt(base_price),
-            'price_low': fmt(base_price * 0.88),
-            'price_high': fmt(base_price * 1.12),
+            'price_low': fmt(base_price * 0.92),  # Lower confidence bound
+            'price_high': fmt(base_price * 1.08), # Upper confidence bound
             'rate': f"₹{int((base_price * 100000) / sqft):,}/sqft",
             'city': city_display,
-            'tier_label': ["Rural Area", "Tier-2 City", "Metro City"][tier],
-            'sqft': int(sqft), 'beds': int(beds), 'baths': int(baths)
+            'tier_label': ["Rural / Small Town", "Tier-2 City", "Metro / Prime City"][tier],
+            'status': 'success'
         })
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'Prediction Engine Error: {str(e)}'}), 500
 
 if __name__ == '__main__':
+    # Running on local port 5000
     app.run(debug=True, port=5000)
