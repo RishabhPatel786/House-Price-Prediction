@@ -3,120 +3,293 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bharat Estate AI</title>
+  <title>Bharat Estate AI | Advanced Property Intelligence</title>
+  
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=DM+Sans:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  
   <style>
-    :root { --bg: #030712; --glass: rgba(17, 24, 39, 0.8); --accent: #3b82f6; --green: #10b981; --text: #f9fafb; --border: rgba(255, 255, 255, 0.1); }
-    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
-    header { padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; background: rgba(3, 7, 18, 0.5); backdrop-filter: blur(15px); border-bottom: 1px solid var(--border); z-index: 100; }
-    .main-container { display: flex; flex: 1; overflow: hidden; }
-    .sidebar { width: 420px; background: var(--glass); backdrop-filter: blur(30px); border-right: 1px solid var(--border); padding: 30px; overflow-y: auto; }
-    input, select { width: 100%; padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; color: white; margin-bottom: 20px; outline: none; }
-    .btn-predict { width: 100%; padding: 16px; background: var(--accent); border: none; border-radius: 14px; color: white; font-family: 'Syne'; font-weight: 800; cursor: pointer; }
-    .map-container { flex: 1; position: relative; }
+    /* --- Modern UI Variables --- */
+    :root {
+      --bg: #030712;
+      --glass: rgba(17, 24, 39, 0.75);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --accent: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.4);
+      --green: #10b981;
+      --text: #f9fafb;
+      --muted: #9ca3af;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden; /* App-like fixed viewport */
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* AI Moving Background */
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: -1; filter: blur(80px);
+      background: radial-gradient(circle at 20% 30%, #1e1b4b 0%, transparent 40%),
+                  radial-gradient(circle at 80% 70%, #1e3a8a 0%, transparent 40%);
+    }
+
+    /* --- Welcome Screen --- */
+    #welcome-screen {
+      position: fixed; inset: 0; background: var(--bg); z-index: 10000;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      transition: opacity 0.8s ease;
+    }
+    .loader-bar { width: 220px; height: 2px; background: #1f2937; margin-top: 25px; overflow: hidden; border-radius: 2px; }
+    .loader-progress { width: 0%; height: 100%; background: var(--accent); animation: load 1.6s ease-in-out forwards; }
+    @keyframes load { to { width: 100%; } }
+
+    header {
+      padding: 16px 35px;
+      display: flex; justify-content: space-between; align-items: center;
+      background: rgba(3, 7, 18, 0.4);
+      backdrop-filter: blur(15px);
+      border-bottom: 1px solid var(--glass-border);
+      z-index: 100;
+    }
+    .logo { font-family: 'Syne'; font-weight: 800; font-size: 22px; letter-spacing: -0.5px; }
+    .nav-pills { display: flex; gap: 8px; background: rgba(255,255,255,0.03); padding: 5px; border-radius: 14px; border: 1px solid var(--glass-border); }
+    .nav-pills a { padding: 8px 20px; color: var(--muted); text-decoration: none; font-size: 13px; border-radius: 10px; font-weight: 500; transition: 0.3s; }
+    .nav-pills a.active { background: var(--accent); color: white; box-shadow: 0 4px 15px var(--accent-glow); }
+
+    .main-layout { display: flex; flex: 1; overflow: hidden; }
+
+    /* --- Sophisticated Sidebar --- */
+    .sidebar {
+      width: 440px;
+      background: var(--glass);
+      backdrop-filter: blur(35px);
+      border-right: 1px solid var(--glass-border);
+      padding: 35px;
+      overflow-y: auto;
+      z-index: 50;
+      box-shadow: 20px 0 50px rgba(0,0,0,0.3);
+    }
+
+    .section-tag { font-size: 10px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; display: block; }
+    
+    .field { margin-bottom: 25px; }
+    label { display: block; font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 10px; text-transform: uppercase; }
+    input, select {
+      width: 100%; padding: 15px; background: rgba(255,255,255,0.04);
+      border: 1px solid var(--glass-border); border-radius: 14px; color: white;
+      font-size: 14px; outline: none; transition: 0.3s;
+    }
+    input:focus, select:focus { border-color: var(--accent); background: rgba(255,255,255,0.07); }
+
+    .btn-generate {
+      width: 100%; padding: 18px; background: var(--accent); border: none;
+      border-radius: 16px; color: white; font-family: 'Syne'; font-weight: 800;
+      cursor: pointer; font-size: 15px; margin-top: 10px;
+      box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+    }
+    .btn-generate:hover { transform: translateY(-2px); box-shadow: 0 15px 35px rgba(59, 130, 246, 0.5); }
+
+    /* --- Interactive Prediction Result --- */
+    #result-panel {
+      display: none; margin-top: 35px; padding: 25px;
+      background: rgba(16, 185, 129, 0.08);
+      border-radius: 24px; border: 1px solid rgba(16, 185, 129, 0.2);
+      animation: reveal 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes reveal { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    .price-value { font-family: 'Syne'; font-size: 42px; color: var(--green); margin: 12px 0; font-weight: 800; }
+    .locality-text { font-size: 15px; font-weight: 600; color: var(--text); }
+
+    .map-zone { flex: 1; position: relative; }
     #map { height: 100%; width: 100%; }
-    #result-section { display: none; margin-top: 30px; padding: 20px; background: rgba(16, 185, 129, 0.1); border-radius: 15px; border: 1px solid var(--green); }
-    .leaflet-control-geocoder { background: #0e1525 !important; border: 1px solid var(--border) !important; color: white !important; width: 350px !important; border-radius: 10px !important; }
-    .leaflet-control-geocoder-form input { color: white !important; }
+
+    /* Custom Geocoder Styles */
+    .leaflet-control-geocoder { 
+      border-radius: 14px !important; 
+      background: #0e1525 !important; 
+      border: 1px solid var(--glass-border) !important; 
+      box-shadow: 0 15px 45px rgba(0,0,0,0.5) !important;
+      margin: 25px !important;
+      width: 380px !important;
+    }
+    .leaflet-control-geocoder-form input { color: white !important; font-size: 14px !important; padding: 12px !important; }
+
+    #error-toast { position: fixed; top: 40px; left: 50%; transform: translateX(-50%); background: #ef4444; color: white; padding: 15px 30px; border-radius: 15px; display: none; z-index: 10001; font-weight: 700; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
   </style>
 </head>
 <body>
 
+  <div id="welcome-screen">
+    <div style="font-size: 55px;">🏰</div>
+    <h1 style="font-family: 'Syne'; font-size: 36px; margin-top: 15px;">Bharat Estate <span style="color: var(--accent);">AI</span></h1>
+    <div class="loader-bar"><div class="loader-progress"></div></div>
+  </div>
+
   <header>
-    <div style="font-family: 'Syne'; font-weight: 800; font-size: 22px;">BHARAT ESTATE <span style="color: var(--accent);">AI</span></div>
+    <div class="logo">BHARAT ESTATE <span style="color: var(--accent);">AI</span></div>
+    <div class="nav-pills">
+      <a href="#" class="active">Intelligence</a>
+      <a href="#map">Market Map</a>
+    </div>
   </header>
 
-  <div class="main-container">
+  <div class="main-layout">
     <aside class="sidebar">
-      <form id="priceForm">
-        <label style="font-size: 11px; color: #9ca3af;">TOTAL SQ.FT.</label>
-        <input type="number" name="sqft" id="sqft" value="1200" required>
-        <div style="display: flex; gap: 10px;">
-          <input type="number" name="beds" placeholder="Beds" value="2" required>
-          <input type="number" name="baths" placeholder="Baths" value="2" required>
+      <span class="section-tag">Property Config</span>
+      
+      <form id="intelligenceForm">
+        <div class="field">
+          <label><i class="fa fa-ruler-combined"></i> Living Area (sq. ft.)</label>
+          <input type="number" name="sqft" id="sqft" value="1200" required>
         </div>
-        <select name="prop_type">
-          <option value="0">Apartment</option>
-          <option value="1">Independent House</option>
-          <option value="2">Luxury Villa</option>
-        </select>
-        <select name="furnish">
-          <option value="0">Unfurnished</option>
-          <option value="1">Semi-Furnished</option>
-          <option value="2">Fully Furnished</option>
-        </select>
+        
+        <div style="display: flex; gap: 20px;">
+          <div class="field" style="flex: 1;">
+            <label><i class="fa fa-bed"></i> Bedrooms</label>
+            <input type="number" name="beds" id="beds" value="2" required>
+          </div>
+          <div class="field" style="flex: 1;">
+            <label><i class="fa fa-bath"></i> Baths</label>
+            <input type="number" name="baths" id="baths" value="2" required>
+          </div>
+        </div>
+
+        <div class="field">
+          <label><i class="fa fa-city"></i> Architectural Class</label>
+          <select name="prop_type">
+            <option value="0">Urban Apartment</option>
+            <option value="1">Modern Independent House</option>
+            <option value="2">Signature Luxury Villa</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label><i class="fa fa-couch"></i> Furnishing Grade</label>
+          <select name="furnish">
+            <option value="0">Base / Unfurnished</option>
+            <option value="1">Executive Semi-Furnished</option>
+            <option value="2">Elite Fully-Furnished</option>
+          </select>
+        </div>
+
         <input type="hidden" name="lat" id="lat">
         <input type="hidden" name="lng" id="lng">
         <input type="hidden" name="manual_city" id="manual_city">
         
-        <button type="submit" class="btn-predict" id="subBtn">RUN AI ANALYSIS</button>
+        <button type="submit" class="btn-generate" id="runBtn">
+          RUN AI PREDICTION <i class="fa fa-bolt" style="margin-left: 10px; font-size: 13px;"></i>
+        </button>
       </form>
 
-      <div id="result-section">
-        <div id="res-p" style="font-size: 32px; font-weight: 800; color: var(--green); font-family: 'Syne';">₹0.00 L</div>
-        <div id="res-city" style="font-size: 14px; font-weight: bold; margin-top: 5px;">---</div>
-        <div id="res-tier" style="font-size: 11px; color: var(--accent); margin-top: 5px; text-transform: uppercase;"></div>
+      <div id="result-panel">
+        <div style="font-size: 10px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">Market Valuation</div>
+        <div class="price-value" id="res-val">₹0.00 L</div>
+        <div class="locality-text" id="res-loc">---</div>
+        <div id="res-tier" style="font-size: 11px; color: var(--accent); font-weight: 900; margin-top: 10px; text-transform: uppercase;"></div>
       </div>
     </aside>
-    <div class="map-container"><div id="map"></div></div>
+
+    <div class="map-zone">
+      <div id="map"></div>
+    </div>
   </div>
+
+  <div id="error-toast"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
   <script>
+    // --- Map Systems Initialization ---
     const map = L.map('map', { zoomControl: false }).setView([22.9734, 78.6569], 5);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
     let marker;
+
+    // --- India-Centric Intelligence Search ---
     const geocoder = L.Control.geocoder({
       defaultMarkGeocode: false,
-      placeholder: "Search Locality (e.g. Vijay Nagar Jabalpur)",
+      placeholder: "Search Locality (e.g., Vijay Nagar Jabalpur)",
       collapsed: false,
       geocoder: L.Control.Geocoder.nominatim({
-        geocodingQueryParams: { countrycodes: 'in', addressdetails: 1, viewbox: '68,7,97,35', bounded: 1 }
+        geocodingQueryParams: { 
+          countrycodes: 'in', 
+          addressdetails: 1, 
+          viewbox: '68,7,97,35', 
+          bounded: 1 
+        }
       })
     }).on('markgeocode', function(e) {
       const latlng = e.geocode.center;
-      const name = e.geocode.name; // This is the full string like "Vijay Nagar, Jabalpur..."
+      const exactName = e.geocode.name; // Full locality string
       
       map.setView(latlng, 15);
-      if (marker) map.removeLayer(marker);
-      marker = L.marker(latlng).addTo(map);
-      
-      document.getElementById('lat').value = latlng.lat;
-      document.getElementById('lng').value = latlng.lng;
-      // FIX: Force the manual city hidden input to take the exact search result
-      document.getElementById('manual_city').value = name;
+      lockPosition(latlng, exactName);
     }).addTo(map);
 
-    map.on('click', e => {
+    function lockPosition(latlng, name = "") {
       if (marker) map.removeLayer(marker);
-      marker = L.marker(e.latlng).addTo(map);
-      document.getElementById('lat').value = e.latlng.lat;
-      document.getElementById('lng').value = e.latlng.lng;
-      document.getElementById('manual_city').value = ""; // Reset if manually clicked
+      marker = L.marker(latlng).addTo(map);
+      document.getElementById('lat').value = latlng.lat;
+      document.getElementById('lng').value = latlng.lng;
+      // FIX: Locality-Lock ensures the exact search result is used
+      document.getElementById('manual_city').value = name;
+    }
+
+    map.on('click', e => lockPosition(e.latlng, ""));
+
+    // Welcome Screen Flow
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const ws = document.getElementById('welcome-screen');
+        ws.style.opacity = '0';
+        setTimeout(() => ws.style.display = 'none', 800);
+      }, 1600);
     });
 
-    document.getElementById('priceForm').onsubmit = async (e) => {
+    // --- Core Intelligence Submission ---
+    document.getElementById('intelligenceForm').onsubmit = async (e) => {
       e.preventDefault();
-      if (!document.getElementById('lat').value) return alert("Select a location!");
-      const btn = document.getElementById('subBtn');
-      btn.innerText = "CALCULATING...";
-      const fd = new FormData(e.target);
-      const res = await fetch('/predict', { method: 'POST', body: fd });
-      const data = await res.json();
-      if (data.error) alert(data.error);
-      else {
-        document.getElementById('result-section').style.display = 'block';
-        document.getElementById('res-p').innerText = data.price;
-        document.getElementById('res-city').innerText = data.city;
-        document.getElementById('res-tier').innerText = data.tier_label;
+      if (!document.getElementById('lat').value) {
+        triggerToast("LOCATION DATA MISSING: Pin your property on the map.");
+        return;
       }
-      btn.innerText = "RUN AI ANALYSIS";
+      
+      const btn = document.getElementById('runBtn');
+      btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> CALCULATING CORE...';
+      
+      const fd = new FormData(e.target);
+      try {
+        const res = await fetch('/predict', { method: 'POST', body: fd });
+        const data = await res.json();
+        
+        if (data.error) {
+            triggerToast(data.error);
+        } else {
+            const panel = document.getElementById('result-panel');
+            panel.style.display = 'block';
+            document.getElementById('res-val').innerText = data.price;
+            document.getElementById('res-loc').innerText = data.city;
+            document.getElementById('res-tier').innerText = data.tier_label;
+            panel.scrollIntoView({ behavior: 'smooth' });
+        }
+      } catch (err) { triggerToast("CONNECTION ERROR: Intelligence engine offline."); }
+      btn.innerHTML = 'RUN AI PREDICTION <i class="fa fa-bolt" style="margin-left: 10px;"></i>';
     };
+
+    function triggerToast(m) {
+      const t = document.getElementById('error-toast');
+      t.innerText = m; t.style.display = 'block';
+      setTimeout(() => t.style.display = 'none', 5000);
+    }
   </script>
 </body>
 </html>
