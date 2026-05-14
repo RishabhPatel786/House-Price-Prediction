@@ -36,40 +36,48 @@ def predict():
                 'error': f'Architectural Error: {int(beds)} bedrooms in {int(sqft)} sq.ft. is not feasible.'
             }), 400
 
-        # 3. India-Only Tier Detection
+        # 3. India-Only Tier Detection with Locality Focus
         tier = 0
         city_display = "Rural / Small Town"
         if lat and lng:
             try:
-                headers = {'User-Agent': 'BharatEstateAI_Final_v3'}
-                geo_url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lng}&countrycodes=in"
+                headers = {'User-Agent': 'BharatEstateAI_Final_v4'}
+                # addressdetails=1 is key to getting specific locality/suburb names
+                geo_url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lng}&countrycodes=in&addressdetails=1"
                 resp = requests.get(geo_url, headers=headers, timeout=5).json()
                 
-                # Enforce India-only results
                 if resp.get('address', {}).get('country_code') != 'in':
                     return jsonify({'error': 'Location Error: Please select a location within India.'}), 400
 
-                addr = resp.get('display_name', '').lower()
-                city_display = resp.get('address', {}).get('city') or resp.get('address', {}).get('state_district') or "Detected Area"
+                addr_details = resp.get('address', {})
                 
-                if any(c in addr for c in PRIME_CITIES):
+                # Priority Logic: Neighborhood/Suburb -> City -> District
+                locality = addr_details.get('suburb') or addr_details.get('neighbourhood') or addr_details.get('village') or addr_details.get('subdivision')
+                city = addr_details.get('city') or addr_details.get('town') or addr_details.get('state_district')
+                
+                if locality and city:
+                    city_display = f"{locality}, {city}"
+                else:
+                    city_display = locality or city or "Detected Area"
+
+                addr_full = resp.get('display_name', '').lower()
+                if any(c in addr_full for c in PRIME_CITIES):
                     tier = 2
-                elif any(c in addr for c in TIER2_CITIES):
+                elif any(c in addr_full for c in TIER2_CITIES):
                     tier = 1
             except Exception: pass
 
-        # 4. Model Prediction & Realism Multipliers
+        # 4. Model Prediction & Multipliers
         cols = ["sqft", "beds", "baths", "tier", "prop_type", "furnish"]
         features = pd.DataFrame([[sqft, beds, baths, tier, prop_type, furnish]], columns=cols)
         base_price = float(model.predict(features)[0])
 
-        # Manual weights for distinct Pricing
-        if tier == 0: base_price *= 0.60  # Rural discount
-        if tier == 2: base_price *= 1.45  # Metro premium
-        if prop_type == 1: base_price *= 1.20 # House
-        if prop_type == 2: base_price *= 1.55 # Villa
-        if furnish == 1: base_price *= 1.12 # Semi
-        if furnish == 2: base_price *= 1.25 # Full
+        if tier == 0: base_price *= 0.60
+        if tier == 2: base_price *= 1.45
+        if prop_type == 1: base_price *= 1.20
+        if prop_type == 2: base_price *= 1.55
+        if furnish == 1: base_price *= 1.12
+        if furnish == 2: base_price *= 1.25
 
         def fmt(val):
             return f"₹{val/100:.2f} Cr" if val >= 100 else f"₹{val:.1f} L"

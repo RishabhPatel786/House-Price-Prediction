@@ -18,14 +18,12 @@
     * { box-sizing: border-box; }
     body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
     
-    /* AI Animated Background */
     body::before {
       content: ''; position: fixed; inset: 0; z-index: -1; filter: blur(80px);
       background: radial-gradient(circle at 20% 30%, #1e1b4b 0%, transparent 40%),
                   radial-gradient(circle at 80% 70%, #1e3a8a 0%, transparent 40%);
     }
 
-    /* Welcome Feature */
     #welcome-screen { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.8s ease; }
     .loader-bar { width: 200px; height: 2px; background: #1f2937; margin-top: 20px; overflow: hidden; }
     .loader-progress { width: 0%; height: 100%; background: var(--accent); animation: load 1.5s ease-in-out forwards; }
@@ -54,9 +52,8 @@
     .map-container { flex: 1; position: relative; }
     #map { height: 100%; width: 100%; }
     
-    /* Search Bar Design */
-    .leaflet-control-geocoder { background: var(--bg) !important; border-radius: 12px !important; border: 1px solid var(--border) !important; margin: 20px !important; }
-    .leaflet-control-geocoder-form input { color: white !important; }
+    .leaflet-control-geocoder { background: var(--bg) !important; border-radius: 12px !important; border: 1px solid var(--border) !important; margin: 20px !important; width: 320px !important; }
+    .leaflet-control-geocoder-form input { color: white !important; font-family: 'DM Sans', sans-serif !important; }
     #toast { position: fixed; top: 30px; left: 50%; transform: translateX(-50%); background: #ef4444; color: white; padding: 12px 25px; border-radius: 12px; display: none; z-index: 10000; font-weight: bold; }
   </style>
 </head>
@@ -118,21 +115,31 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
   <script>
-    // Initialize Map
     const map = L.map('map', { zoomControl: false }).setView([22.9734, 78.6569], 5);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-    // --- FIX: INDIA-ONLY SEARCH ---
+    // --- FIX: LOCALITY-FIRST SEARCH ---
     const geocoder = L.Control.geocoder({
       defaultMarkGeocode: false,
-      placeholder: "Search Indian Areas...",
+      placeholder: "Search Locality (e.g., Vijay Nagar Jabalpur)",
       collapsed: false,
       geocoder: L.Control.Geocoder.nominatim({
-        geocodingQueryParams: { countrycodes: 'in', viewbox: '68,7,97,35', bounded: 1 }
+        geocodingQueryParams: { 
+          countrycodes: 'in', 
+          viewbox: '68,7,97,35', 
+          bounded: 1,
+          addressdetails: 1 // Required to break down locality vs city
+        }
       })
     }).on('markgeocode', function(e) {
-      map.setView(e.geocode.center, 14);
-      setPoint(e.geocode.center);
+      const latlng = e.geocode.center;
+      const fullLocality = e.geocode.name; // Captures specific neighborhood
+      
+      map.setView(latlng, 15);
+      setPoint(latlng);
+      
+      // Update UI instantly with the specific locality name
+      document.getElementById('res-city').innerText = fullLocality;
     }).addTo(map);
 
     function setPoint(latlng) {
@@ -143,7 +150,6 @@
     }
     map.on('click', e => setPoint(e.latlng));
 
-    // Welcome Screen Delay
     window.addEventListener('load', () => {
       setTimeout(() => {
         const ws = document.getElementById('welcome-screen');
