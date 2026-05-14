@@ -1,61 +1,33 @@
 import pandas as pd
+import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 import pickle
-import numpy as np
 
-# Calibrated Dataset
+# Calibrated Dataset (2025-26 Indian Market)
 data = {
-    'sqft':      [600, 700, 800, 900, 1000, 1000, 1000, 1100, 1200, 1200,
-                  1300, 1500, 1500, 1500, 1600, 1800, 2000, 2000, 2000, 2200,
-                  2500, 3000, 3500, 4000, 800,  900,  1000, 1200, 1500, 2000,
-                  600,  750,  850,  950, 1050, 1150, 1250, 1350, 1450, 1600,
-                  1700, 1900, 2100, 2300, 2600, 2800, 3200, 3800, 700,  1100],
-    'beds':      [1, 1, 2, 2, 2, 2, 2, 2, 2, 3,
-                  3, 3, 3, 3, 3, 3, 3, 3, 4, 4,
-                  4, 4, 5, 5, 1, 2, 2, 3, 3, 4,
-                  1, 1, 2, 2, 2, 2, 3, 3, 3, 3,
-                  3, 4, 4, 4, 4, 5, 5, 6, 1, 2],
-    'baths':     [1, 1, 1, 1, 2, 2, 2, 2, 2, 2,
-                  2, 2, 2, 2, 3, 3, 3, 3, 3, 3,
-                  4, 4, 4, 5, 1, 1, 2, 2, 3, 3,
-                  1, 1, 1, 1, 2, 2, 2, 2, 2, 3,
-                  3, 3, 3, 4, 4, 4, 5, 5, 1, 2],
-    'tier':      [0, 0, 0, 0, 0, 1, 2, 1, 1, 2,
-                  1, 0, 1, 2, 2, 1, 0, 1, 2, 2,
-                  2, 2, 2, 2, 2, 2, 1, 1, 1, 1,
-                  0, 0, 0, 1, 1, 2, 0, 1, 2, 1,
-                  2, 1, 2, 2, 2, 2, 2, 2, 0, 0],
-    'prop_type': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                  1, 0, 1, 0, 1, 1, 1, 1, 1, 1,
-                  1, 2, 2, 2, 0, 0, 0, 1, 1, 1,
-                  0, 0, 0, 0, 0, 0, 1, 1, 0, 1,
-                  1, 1, 1, 2, 2, 2, 2, 2, 0, 0],
-    'furnish':   [0, 0, 1, 0, 1, 1, 1, 1, 2, 2,
-                  1, 0, 1, 2, 2, 1, 0, 1, 2, 2,
-                  2, 2, 2, 2, 0, 1, 1, 1, 2, 2,
-                  0, 1, 0, 1, 1, 2, 0, 1, 2, 1,
-                  2, 1, 2, 2, 2, 2, 2, 2, 0, 1],
-    'price':     [8,  10, 14, 16, 22, 42, 72, 48, 55, 85,
-                  60, 28, 65, 110, 130, 80, 52, 92, 160, 175,
-                  210, 340, 420, 550, 75, 90, 50, 70, 95, 140,
-                  7,  12, 15, 40, 45, 78, 35, 62, 95, 85,
-                  145, 100, 185, 280, 320, 400, 480, 600, 9, 18]
+    'sqft':      [600, 800, 1000, 1200, 1500, 1800, 2000, 2500, 3000, 3500, 4000],
+    'beds':      [1, 2, 2, 3, 3, 3, 4, 4, 5, 5, 6],
+    'baths':     [1, 1, 2, 2, 2, 3, 3, 4, 4, 5, 5],
+    'tier':      [0, 0, 1, 1, 2, 2, 1, 2, 2, 2, 2],
+    'prop_type': [0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2],
+    'furnish':   [0, 1, 1, 2, 1, 2, 1, 2, 2, 2, 2],
+    'price':     [8, 15, 45, 60, 110, 140, 95, 250, 380, 500, 650]
 }
 
 df = pd.DataFrame(data)
 X = df.drop('price', axis=1)
 y = df['price']
 
-pipeline = Pipeline([
+# Create and save Pipeline
+model_pipeline = Pipeline([
     ('scaler', StandardScaler()),
-    ('model', LinearRegression())
+    ('regressor', LinearRegression())
 ])
 
-pipeline.fit(X, y)
-
+model_pipeline.fit(X, y)
 with open('model.pkl', 'wb') as f:
-    pickle.dump(pipeline, f)
+    pickle.dump(model_pipeline, f)
 
-print("✅ model.pkl saved successfully.")
+print("✅ Success: model.pkl created.")

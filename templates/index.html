@@ -3,114 +3,66 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bharat Estate AI | Precision Property Intelligence</title>
-  
+  <title>Bharat Estate AI</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=DM+Sans:wght@400;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-  
   <style>
-    :root {
-      --bg: #030712; --glass: rgba(17, 24, 39, 0.75); --accent: #3b82f6; 
-      --green: #10b981; --text: #f9fafb; --muted: #9ca3af; --border: rgba(255, 255, 255, 0.1);
-    }
-    * { box-sizing: border-box; }
+    :root { --bg: #030712; --glass: rgba(17, 24, 39, 0.8); --accent: #3b82f6; --green: #10b981; --text: #f9fafb; --border: rgba(255, 255, 255, 0.1); }
     body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
-    
-    body::before {
-      content: ''; position: fixed; inset: 0; z-index: -1; filter: blur(80px);
-      background: radial-gradient(circle at 20% 30%, #1e1b4b 0%, transparent 40%),
-                  radial-gradient(circle at 80% 70%, #1e3a8a 0%, transparent 40%);
-    }
-
-    #welcome-screen { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.8s ease; }
-    .loader-bar { width: 200px; height: 2px; background: #1f2937; margin-top: 20px; overflow: hidden; }
-    .loader-progress { width: 0%; height: 100%; background: var(--accent); animation: load 1.5s ease-in-out forwards; }
-    @keyframes load { to { width: 100%; } }
-
-    header { padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; background: rgba(3, 7, 18, 0.4); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); z-index: 100; }
-    .logo { font-family: 'Syne'; font-weight: 800; font-size: 22px; }
-    .nav-pill { display: flex; gap: 10px; background: rgba(255,255,255,0.03); padding: 5px; border-radius: 12px; }
-    .nav-pill a { padding: 7px 18px; color: var(--muted); text-decoration: none; font-size: 13px; border-radius: 8px; font-weight: 500; }
-    .nav-pill a.active { background: var(--accent); color: white; }
-
+    header { padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; background: rgba(3, 7, 18, 0.5); backdrop-filter: blur(15px); border-bottom: 1px solid var(--border); z-index: 100; }
     .main-container { display: flex; flex: 1; overflow: hidden; }
-    .sidebar { width: 420px; background: var(--glass); backdrop-filter: blur(25px); border-right: 1px solid var(--border); padding: 30px; overflow-y: auto; }
-    
-    .input-group { margin-bottom: 20px; }
-    label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
-    input, select { width: 100%; padding: 14px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 12px; color: white; outline: none; }
-    input:focus { border-color: var(--accent); }
-
+    .sidebar { width: 420px; background: var(--glass); backdrop-filter: blur(30px); border-right: 1px solid var(--border); padding: 30px; overflow-y: auto; }
+    input, select { width: 100%; padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; color: white; margin-bottom: 20px; outline: none; }
     .btn-predict { width: 100%; padding: 16px; background: var(--accent); border: none; border-radius: 14px; color: white; font-family: 'Syne'; font-weight: 800; cursor: pointer; }
-    
-    #result-section { display: none; margin-top: 30px; padding: 25px; background: rgba(16, 185, 129, 0.05); border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.2); animation: slideUp 0.5s ease; }
-    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    .price-tag { font-family: 'Syne'; font-size: 38px; color: var(--green); font-weight: 800; margin: 10px 0; }
-
     .map-container { flex: 1; position: relative; }
     #map { height: 100%; width: 100%; }
-    
-    .leaflet-control-geocoder { background: var(--bg) !important; border-radius: 12px !important; border: 1px solid var(--border) !important; margin: 20px !important; width: 320px !important; }
-    .leaflet-control-geocoder-form input { color: white !important; font-family: 'DM Sans', sans-serif !important; }
-    #toast { position: fixed; top: 30px; left: 50%; transform: translateX(-50%); background: #ef4444; color: white; padding: 12px 25px; border-radius: 12px; display: none; z-index: 10000; font-weight: bold; }
+    #result-section { display: none; margin-top: 30px; padding: 20px; background: rgba(16, 185, 129, 0.1); border-radius: 15px; border: 1px solid var(--green); }
+    .leaflet-control-geocoder { background: #0e1525 !important; border: 1px solid var(--border) !important; color: white !important; width: 350px !important; border-radius: 10px !important; }
+    .leaflet-control-geocoder-form input { color: white !important; }
   </style>
 </head>
 <body>
 
-  <div id="welcome-screen">
-    <h1 style="font-family: 'Syne'; font-size: 32px;">Bharat Estate <span style="color: var(--accent);">AI</span></h1>
-    <div class="loader-bar"><div class="loader-progress"></div></div>
-  </div>
-
   <header>
-    <div class="logo">BHARAT ESTATE <span style="color: var(--accent);">AI</span></div>
-    <div class="nav-pill">
-      <a href="#" class="active">Predictor</a>
-      <a href="#map">Market Map</a>
-    </div>
+    <div style="font-family: 'Syne'; font-weight: 800; font-size: 22px;">BHARAT ESTATE <span style="color: var(--accent);">AI</span></div>
   </header>
 
   <div class="main-container">
     <aside class="sidebar">
       <form id="priceForm">
-        <div class="input-group"><label>Total Area (sq. ft.)</label><input type="number" name="sqft" id="sqft" value="1200" required></div>
-        <div style="display: flex; gap: 15px;">
-          <div class="input-group" style="flex: 1;"><label>Beds</label><input type="number" name="beds" id="beds" value="2" required></div>
-          <div class="input-group" style="flex: 1;"><label>Baths</label><input type="number" name="baths" id="baths" value="2" required></div>
+        <label style="font-size: 11px; color: #9ca3af;">TOTAL SQ.FT.</label>
+        <input type="number" name="sqft" id="sqft" value="1200" required>
+        <div style="display: flex; gap: 10px;">
+          <input type="number" name="beds" placeholder="Beds" value="2" required>
+          <input type="number" name="baths" placeholder="Baths" value="2" required>
         </div>
-        <div class="input-group">
-          <label>Property Class</label>
-          <select name="prop_type">
-            <option value="0">Apartment / Flat</option>
-            <option value="1">Independent House</option>
-            <option value="2">Luxury Villa</option>
-          </select>
-        </div>
-        <div class="input-group">
-          <label>Furnishing Status</label>
-          <select name="furnish">
-            <option value="0">Unfurnished</option>
-            <option value="1">Semi-Furnished</option>
-            <option value="2">Fully Furnished</option>
-          </select>
-        </div>
-        <input type="hidden" name="lat" id="lat"><input type="hidden" name="lng" id="lng">
+        <select name="prop_type">
+          <option value="0">Apartment</option>
+          <option value="1">Independent House</option>
+          <option value="2">Luxury Villa</option>
+        </select>
+        <select name="furnish">
+          <option value="0">Unfurnished</option>
+          <option value="1">Semi-Furnished</option>
+          <option value="2">Fully Furnished</option>
+        </select>
+        <input type="hidden" name="lat" id="lat">
+        <input type="hidden" name="lng" id="lng">
+        <input type="hidden" name="manual_city" id="manual_city">
+        
         <button type="submit" class="btn-predict" id="subBtn">RUN AI ANALYSIS</button>
       </form>
 
       <div id="result-section">
-        <div class="price-tag" id="res-p">₹0.00 L</div>
-        <div style="font-size: 14px; font-weight: bold;" id="res-city">---</div>
-        <div id="res-tier" style="font-size: 11px; color: var(--accent); font-weight: 800; margin-top: 5px; text-transform: uppercase;"></div>
+        <div id="res-p" style="font-size: 32px; font-weight: 800; color: var(--green); font-family: 'Syne';">₹0.00 L</div>
+        <div id="res-city" style="font-size: 14px; font-weight: bold; margin-top: 5px;">---</div>
+        <div id="res-tier" style="font-size: 11px; color: var(--accent); margin-top: 5px; text-transform: uppercase;"></div>
       </div>
     </aside>
-
     <div class="map-container"><div id="map"></div></div>
   </div>
-
-  <div id="toast"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
@@ -118,58 +70,45 @@
     const map = L.map('map', { zoomControl: false }).setView([22.9734, 78.6569], 5);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-    // --- FIX: LOCALITY-FIRST SEARCH ---
+    let marker;
     const geocoder = L.Control.geocoder({
       defaultMarkGeocode: false,
-      placeholder: "Search Locality (e.g., Vijay Nagar Jabalpur)",
+      placeholder: "Search Locality (e.g. Vijay Nagar Jabalpur)",
       collapsed: false,
       geocoder: L.Control.Geocoder.nominatim({
-        geocodingQueryParams: { 
-          countrycodes: 'in', 
-          viewbox: '68,7,97,35', 
-          bounded: 1,
-          addressdetails: 1 // Required to break down locality vs city
-        }
+        geocodingQueryParams: { countrycodes: 'in', addressdetails: 1, viewbox: '68,7,97,35', bounded: 1 }
       })
     }).on('markgeocode', function(e) {
       const latlng = e.geocode.center;
-      const fullLocality = e.geocode.name; // Captures specific neighborhood
+      const name = e.geocode.name; // This is the full string like "Vijay Nagar, Jabalpur..."
       
       map.setView(latlng, 15);
-      setPoint(latlng);
-      
-      // Update UI instantly with the specific locality name
-      document.getElementById('res-city').innerText = fullLocality;
-    }).addTo(map);
-
-    function setPoint(latlng) {
       if (marker) map.removeLayer(marker);
       marker = L.marker(latlng).addTo(map);
+      
       document.getElementById('lat').value = latlng.lat;
       document.getElementById('lng').value = latlng.lng;
-    }
-    map.on('click', e => setPoint(e.latlng));
+      // FIX: Force the manual city hidden input to take the exact search result
+      document.getElementById('manual_city').value = name;
+    }).addTo(map);
 
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        const ws = document.getElementById('welcome-screen');
-        ws.style.opacity = '0';
-        setTimeout(() => ws.style.display = 'none', 800);
-      }, 1500);
+    map.on('click', e => {
+      if (marker) map.removeLayer(marker);
+      marker = L.marker(e.latlng).addTo(map);
+      document.getElementById('lat').value = e.latlng.lat;
+      document.getElementById('lng').value = e.latlng.lng;
+      document.getElementById('manual_city').value = ""; // Reset if manually clicked
     });
 
     document.getElementById('priceForm').onsubmit = async (e) => {
       e.preventDefault();
-      if (!document.getElementById('lat').value) { showToast("Please pin a location on the map!"); return; }
-      
+      if (!document.getElementById('lat').value) return alert("Select a location!");
       const btn = document.getElementById('subBtn');
-      btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> CALCULATING...';
-      
+      btn.innerText = "CALCULATING...";
       const fd = new FormData(e.target);
       const res = await fetch('/predict', { method: 'POST', body: fd });
       const data = await res.json();
-      
-      if (data.error) { showToast(data.error); } 
+      if (data.error) alert(data.error);
       else {
         document.getElementById('result-section').style.display = 'block';
         document.getElementById('res-p').innerText = data.price;
@@ -178,8 +117,6 @@
       }
       btn.innerText = "RUN AI ANALYSIS";
     };
-
-    function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 5000); }
   </script>
 </body>
 </html>
