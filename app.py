@@ -1,59 +1,86 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request
 import pickle
-import pandas as pd
+import numpy as np
 import requests
+import os
 
 app = Flask(__name__)
 
+# Load the brain
 with open('model.pkl', 'rb') as f:
     model = pickle.load(f)
 
-# Geo-Intelligence Keywords
-PREMIUM_KEYS = ['highway', 'nh', 'bypass', 'expressway', 'road', 'marg', 'cloverleaf']
-RURAL_KEYS = ['village', 'gram', 'rural', 'kheda', 'basti', 'panchayat']
-METROS = ['mumbai', 'delhi', 'bangalore', 'hyderabad', 'pune', 'indore', 'gurgaon', 'noida']
-TIER2 = ['jabalpur', 'bhopal', 'gwalior', 'jaipur', 'lucknow', 'nagpur', 'surat']
-
 @app.route('/')
-def index():
+def home():
     return render_template('index.html')
 
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-        req = request.json
-        sqft = float(req.get('sqft', 1000))
-        beds, baths = float(req.get('beds', 2)), float(req.get('baths', 2))
-        tier, mult, loc_label, city = 0, 1.0, "Standard Zone", "Point Selected"
+        # 1. Capture Inputs
+        sqft = float(request.form.get('sqft', 1))
+        beds = float(request.form.get('beds', 0))
+        baths = float(request.form.get('baths', 0))
+        prop_type = float(request.form.get('prop_type', 0))
+        furnish = float(request.form.get('furnish', 0))
+        lat = request.form.get('lat')
+        lng = request.form.get('lng')
 
-        if req.get('lat') and req.get('lng'):
-            headers = {'User-Agent': 'BharatEstate_AI_Pro'}
-            res = requests.get(f"https://nominatim.openstreetmap.org/reverse?format=json&lat={req['lat']}&lon={req['lng']}", headers=headers).json()
-            addr = res.get('display_name', '').lower()
-            city = res.get('address', {}).get('city') or res.get('address', {}).get('town') or "Selected Area"
+        # 2. Strict City & Tier Detection
+        tier = 0 
+        location_label = "Rural/Village"
+        city_display = "Location Detected"
 
-            if any(k in addr for k in PREMIUM_KEYS):
-                mult += 0.22
-                loc_label = "High-Growth Connectivity Zone"
-            
-            if any(c in addr for c in METROS): tier = 2
-            elif any(c in addr for c in TIER2): tier = 1
-            
-            if any(k in addr for k in RURAL_KEYS):
-                tier, mult, loc_label = 0, mult - 0.15, "Rural / Village Settlement"
+        if lat and lng and lat != "":
+            try:
+                # Mandatory User-Agent to avoid API blocks
+                headers = {'User-Agent': 'HousePredictorProject_v3'}
+                geo_url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lng}"
+                response = requests.get(geo_url, headers=headers, timeout=5).json()
+                
+                # Combine everything into one string for keyword matching
+                full_address = response.get('display_name', '').lower()
+                addr = response.get('address', {})
+                
+                # Better City Name Logic
+                city_display = addr.get('city') or addr.get('town') or addr.get('suburb') or addr.get('district') or "Selected Area"
 
-        features = pd.DataFrame([[sqft, beds, baths, tier, float(req.get('prop_type', 0)), float(req.get('furnish', 1))]], 
-                                columns=["sqft","beds","baths","tier","prop_type","furnish"])
-        
-        final_val = max(float(model.predict(features)[0]) * mult, 5.0)
+                # Match Tiers
+                prime_list = ['indore', 'ahmedabad', 'mumbai', 'surat', 'pune', 'delhi', 'bangalore']
+                standard_list = ['jabalpur', 'bhopal', 'gwalior', 'vadodara', 'rajkot', 'nagpur']
 
-        return jsonify({
-            'price': f"₹{final_val/100:.2f} Cr" if final_val >= 100 else f"₹{final_val:.1f} L",
-            'rate': f"₹{int((final_val * 100000) / sqft):,}/sqft",
-            'label': loc_label, 'city': city.title()
-        })
+                if any(c in full_address for c in prime_list):
+                    tier = 2
+                    location_label = "Prime City Area"
+                elif any(c in full_address for c in standard_list):
+                    tier = 1
+                    location_label = "Standard City Area"
+                
+            except:
+                pass
+
+        # 3. Predict (sqft, beds, baths, tier, prop_type, furnish)
+        features = np.array([[sqft, beds, baths, tier, prop_type, furnish]])
+        val = model.predict(features)[0]
+        if request.form.get('amenities'): val *= 1.15
+
+        # 4. Result Formatting
+        currency = f"₹{round(val/100, 2)} Crore" if val >= 100 else f"₹{round(val, 2)} Lakh"
+        rate = int((val * 100000) / sqft) if sqft > 0 else 0
+
+        return f"""
+            <div style='color: #10b981; font-size: 26px; font-weight: 800;'>{currency}</div>
+            <div style='color: #94a3b8; font-size: 14px; margin-top: 5px;'>
+                <i class='fas fa-map-marker-alt'></i> {city_display.title()} <b>({location_label})</b>
+            </div>
+            <div style='margin-top: 10px; border-top: 1px solid #334155; padding-top: 10px; font-size: 12px; display: flex; justify-content: space-between;'>
+                <span>Rate: ₹{rate}/sqft</span>
+                <span>Tier Score: {tier}/2</span>
+            </div>
+        """
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return f"Error: {str(e)}"
 
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
