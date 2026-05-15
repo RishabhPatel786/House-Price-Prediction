@@ -1,29 +1,35 @@
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
 import pickle
-import numpy as np
 
-# 2026 Calibrated Data
-# tier: 0 (Village), 1 (Jabalpur/Bhopal), 2 (Indore/Ahmedabad)
+# Calibrated 2026 Dataset - High Variance for Location
+# tier: 0 (Rural), 1 (City), 2 (Metro)
 data = {
-    'sqft': [1000, 1000, 1000, 1500, 1500, 1500, 2000, 2000, 2000, 800, 800, 3000],
-    'beds': [2, 2, 2, 3, 3, 3, 3, 3, 3, 2, 2, 4],
-    'baths': [2, 2, 2, 2, 2, 2, 3, 3, 3, 1, 1, 4],
-    'tier': [0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 2, 2], 
-    'prop_type': [0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 2], 
-    'furnish': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2],
-    # Prices: Rural (25L) -> Standard (48L) -> Prime (78L)
-    'price': [25, 48, 78, 38, 68, 115, 58, 98, 165, 18, 52, 360] 
+    'sqft':   [700, 1200, 2500, 700, 1200, 2500, 700, 1200, 2500, 1500, 4000],
+    'beds':   [2,   3,    4,    2,   3,    4,    2,   3,    4,    3,    5],
+    'baths':  [1,   2,    3,    2,   2,    3,    2,   3,    3,    3,    5],
+    'tier':   [0,   0,    0,    1,   1,    1,    2,   2,    2,    1,    2],
+    'type':   [0,   0,    1,    0,   0,    1,    0,   1,    2,    1,    2],
+    'furnish':[0,   1,    1,    1,   1,    1,    1,   2,    2,    1,    2],
+    # Aggressive pricing gaps (in Lakhs) to force the model to learn locality impact
+    'price':  [12,  24,   45,   48,  82,   165,  115, 240,  650,  110,  1200]
 }
 
 df = pd.DataFrame(data)
 X = df.drop('price', axis=1)
 y = df['price']
 
-model = RandomForestRegressor(n_estimators=100, random_state=42)
-model.fit(X, y)
+# Pipeline ensures Tier and Sqft are analyzed on the same mathematical scale
+model_pipeline = Pipeline([
+    ('scaler', StandardScaler()),
+    ('lr', LinearRegression())
+])
 
-with open('model.pkl', 'wb') as file:
-    pickle.dump(model, file)
+model_pipeline.fit(X, y)
 
-print("🚀 BRAIN UPDATED: Ready with 6 features.")
+with open('model.pkl', 'wb') as f:
+    pickle.dump(model_pipeline, f)
+
+print("✅ BRAIN RECALIBRATED: Locality weight increased.")

@@ -2,83 +2,81 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Bharat Estate AI | Elite Edition</title>
+    <title>Bharat Estate AI | Pro Edition</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --p: #6366f1; --s: #10b981; --bg: #0b0f1a; }
-        body { margin:0; font-family:'Inter',sans-serif; background:var(--bg); color:white; display:flex; justify-content:center; padding:30px; }
-        .container { display:grid; grid-template-columns: 380px 1fr; gap:25px; width:100%; max-width:1250px; }
-        .card { background:rgba(255,255,255,0.03); backdrop-filter:blur(15px); border:1px solid rgba(255,255,255,0.1); border-radius:24px; padding:25px; box-shadow:0 20px 40px rgba(0,0,0,0.4); }
-        input, select { width:100%; padding:12px; margin-bottom:15px; border-radius:10px; border:1px solid #334155; background:#161b2c; color:white; box-sizing:border-box; outline:none; }
-        .btn { width:100%; padding:15px; background:linear-gradient(135deg, var(--p), #a855f7); border:none; border-radius:12px; color:white; font-weight:700; cursor:pointer; transition:0.3s; }
-        #map { height:520px; border-radius:20px; border:1px solid #334155; }
-        #result { display:none; margin-top:20px; padding:20px; border-radius:15px; background:rgba(16,185,129,0.08); border-left:4px solid var(--s); text-align:center; }
+        :root { --accent: #6366f1; --bg: #05070a; --card: #0f172a; }
+        body { margin:0; font-family:'Outfit',sans-serif; background:var(--bg); color:white; height:100vh; display:flex; }
+        .sidebar { width: 420px; background:var(--card); border-right:1px solid #1e293b; padding:35px; overflow-y:auto; box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
+        .logo { font-size: 24px; font-weight: 900; color: var(--accent); margin-bottom: 30px; display:flex; align-items:center; gap:10px; }
+        
+        .search-box { display:flex; gap:8px; margin-bottom:25px; background:#1e293b; padding:6px; border-radius:12px; border:1px solid #334155; }
+        .search-box input { background:transparent; border:none; color:white; padding:10px; flex-grow:1; outline:none; }
+        
+        input, select { width:100%; padding:14px; margin-bottom:18px; border-radius:10px; border:1px solid #334155; background:#1e293b; color:white; box-sizing:border-box; outline:none; }
+        .btn-main { width:100%; padding:18px; background:linear-gradient(135deg, var(--accent), #8b5cf6); border:none; border-radius:12px; color:white; font-weight:800; cursor:pointer; text-transform:uppercase; transition:0.2s; }
+        .btn-main:hover { transform:scale(1.02); box-shadow:0 10px 20px rgba(99,102,241,0.3); }
+        
+        #map { flex-grow:1; z-index:1; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <h2 style="margin:0 0 20px 0; color:var(--p);"><i class="fas fa-brain"></i> SmartPrice AI</h2>
-            <form id="priceForm">
-                <input type="number" name="sqft" placeholder="Area (Sq Ft)" required>
-                <input type="number" name="beds" placeholder="Bedrooms" required>
-                <input type="number" name="baths" placeholder="Bathrooms" required>
-                <select name="prop_type">
-                    <option value="0">Apartment</option>
-                    <option value="1">Independent House</option>
-                    <option value="2">Luxury Villa</option>
-                </select>
-                <select name="furnish">
-                    <option value="0">Unfurnished</option>
-                    <option value="1">Semi-Furnished</option>
-                    <option value="2">Fully Furnished</option>
-                </select>
-                <label style="font-size:12px;"><input type="checkbox" name="amenities"> Premium Amenities</label>
-                <input type="hidden" id="lat" name="lat">
-                <input type="hidden" id="lng" name="lng">
-                <button type="submit" class="btn" style="margin-top:15px;">Analyze Valuation</button>
-            </form>
-            <div id="result"></div>
+    <div class="sidebar">
+        <div class="logo"><i class="fas fa-city"></i> BHARAT ESTATE AI</div>
+        
+        <div class="search-box">
+            <input type="text" id="cityIn" placeholder="Search (e.g. Vijay Nagar)">
+            <button onclick="search()" style="background:var(--accent); border:none; color:white; padding:10px 15px; border-radius:8px; cursor:pointer;"><i class="fas fa-search"></i></button>
         </div>
-        <div class="card">
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <input type="text" id="cityIn" placeholder="Search (e.g. ITI Jabalpur)" style="margin:0;">
-                <button onclick="search()" class="btn" id="sBtn" style="width:auto; padding:0 25px;"><i class="fas fa-search"></i></button>
+
+        <form id="priceForm">
+            <label style="font-size:11px; color:#64748b; font-weight:700;">AREA (SQ FT)</label>
+            <input type="number" name="sqft" value="1200">
+            
+            <div style="display:flex; gap:10px;">
+                <div style="flex:1;"><label style="font-size:11px; color:#64748b;">BHK</label><input type="number" name="beds" value="3"></div>
+                <div style="flex:1;"><label style="font-size:11px; color:#64748b;">BATHS</label><input type="number" name="baths" value="2"></div>
             </div>
-            <div id="map"></div>
-        </div>
+
+            <label style="font-size:11px; color:#64748b;">PROPERTY TYPE</label>
+            <select name="prop_type">
+                <option value="0">Apartment</option>
+                <option value="1">Independent House</option>
+                <option value="2">Luxury Villa</option>
+            </select>
+
+            <input type="hidden" id="lat" name="lat">
+            <input type="hidden" id="lng" name="lng">
+            
+            <button type="submit" class="btn-main">Analyze Market Value</button>
+        </form>
+
+        <div id="result" style="margin-top:25px;"></div>
     </div>
+    <div id="map"></div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        var map = L.map('map').setView([22.9734, 78.6569], 5);
+        var map = L.map('map', {zoomControl: false}).setView([23.18, 79.98], 12);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
         var marker;
 
         function search() {
-            var input = document.getElementById('cityIn');
-            var btn = document.getElementById('sBtn');
-            var q = input.value;
-            if(!q) return;
-
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            // Search restricted to India with User-Agent
-            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=in&limit=1`, {
-                headers: { 'User-Agent': 'HousePredictor_v3' }
-            })
+            var q = document.getElementById('cityIn').value;
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&countrycodes=in&limit=1`, { headers: {'User-Agent': 'Estate_AI'} })
             .then(r => r.json()).then(d => {
                 if(d.length > 0) {
                     map.flyTo([d[0].lat, d[0].lon], 15);
                     updateMarker(d[0].lat, d[0].lon);
-                } else {
-                    alert("Location not found. Try adding the city name.");
                 }
-            }).finally(() => { btn.innerHTML = '<i class="fas fa-search"></i>'; });
+            });
         }
 
         function updateMarker(lat, lng) {
             if(marker) map.removeLayer(marker);
-            marker = L.marker([lat, lng]).addTo(map);
+            marker = L.marker([lat, lng], {draggable:true}).addTo(map);
             document.getElementById('lat').value = lat;
             document.getElementById('lng').value = lng;
         }
@@ -87,15 +85,11 @@
 
         document.getElementById('priceForm').onsubmit = async (e) => {
             e.preventDefault();
-            if(!document.getElementById('lat').value) return alert("📍 Pin location on map!");
-            const resDiv = document.getElementById('result');
-            resDiv.innerHTML = "Analyzing...";
-            resDiv.style.display = "block";
+            const resD = document.getElementById('result');
+            resD.innerHTML = "<div style='color:var(--accent)'><i class='fas fa-sync fa-spin'></i> AI analyzing market data...</div>";
             const res = await fetch('/predict', { method: 'POST', body: new FormData(e.target) });
-            resDiv.innerHTML = await res.text();
+            resD.innerHTML = await res.text();
         };
-
-        document.getElementById('cityIn').addEventListener("keypress", e => { if(e.key === "Enter") search(); });
     </script>
 </body>
 </html>

@@ -6,7 +6,6 @@ import os
 
 app = Flask(__name__)
 
-# Load the brain
 with open('model.pkl', 'rb') as f:
     model = pickle.load(f)
 
@@ -17,70 +16,53 @@ def home():
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-        # 1. Capture Inputs
-        sqft = float(request.form.get('sqft', 1))
-        beds = float(request.form.get('beds', 0))
-        baths = float(request.form.get('baths', 0))
+        # Inputs
+        sqft = float(request.form.get('sqft', 1000))
+        beds = float(request.form.get('beds', 2))
+        baths = float(request.form.get('baths', 2))
         prop_type = float(request.form.get('prop_type', 0))
         furnish = float(request.form.get('furnish', 0))
-        lat = request.form.get('lat')
-        lng = request.form.get('lng')
+        lat, lng = request.form.get('lat'), request.form.get('lng')
 
-        # 2. Strict City & Tier Detection
-        tier = 0 
-        location_label = "Rural/Village"
-        city_display = "Location Detected"
+        tier, multiplier, loc_label, city_name = 0, 1.0, "Rural Area", "Selected Location"
 
-        if lat and lng and lat != "":
-            try:
-                # Mandatory User-Agent to avoid API blocks
-                headers = {'User-Agent': 'HousePredictorProject_v3'}
-                geo_url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lng}"
-                response = requests.get(geo_url, headers=headers, timeout=5).json()
-                
-                # Combine everything into one string for keyword matching
-                full_address = response.get('display_name', '').lower()
-                addr = response.get('address', {})
-                
-                # Better City Name Logic
-                city_display = addr.get('city') or addr.get('town') or addr.get('suburb') or addr.get('district') or "Selected Area"
+        if lat and lng:
+            headers = {'User-Agent': 'BharatEstate_v8'}
+            res = requests.get(f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lng}", headers=headers).json()
+            full_addr = res.get('display_name', '').lower()
+            city_name = res.get('address', {}).get('city') or res.get('address', {}).get('town') or "Selected Area"
 
-                # Match Tiers
-                prime_list = ['indore', 'ahmedabad', 'mumbai', 'surat', 'pune', 'delhi', 'bangalore']
-                standard_list = ['jabalpur', 'bhopal', 'gwalior', 'vadodara', 'rajkot', 'nagpur']
+            # 2026 Market Multipliers
+            if any(c in full_addr for c in ['mumbai', 'delhi', 'bangalore', 'pune', 'indore', 'ahmedabad']):
+                tier, multiplier, loc_label = 2, 1.8, "Prime Metro Zone"
+            elif any(c in full_addr for c in ['jabalpur', 'bhopal', 'gwalior', 'jaipur', 'lucknow']):
+                tier, multiplier, loc_label = 1, 1.25, "Standard City Area"
 
-                if any(c in full_address for c in prime_list):
-                    tier = 2
-                    location_label = "Prime City Area"
-                elif any(c in full_address for c in standard_list):
-                    tier = 1
-                    location_label = "Standard City Area"
-                
-            except:
-                pass
-
-        # 3. Predict (sqft, beds, baths, tier, prop_type, furnish)
+        # AI Prediction
         features = np.array([[sqft, beds, baths, tier, prop_type, furnish]])
-        val = model.predict(features)[0]
-        if request.form.get('amenities'): val *= 1.15
+        pred = model.predict(features)[0]
+        
+        # Apply Multiplier & Floor Price Guardrails
+        final_val = pred * multiplier
+        if tier == 2: final_val = max(final_val, 55.0) # Metro Floor
+        elif tier == 1: final_val = max(final_val, 28.0) # City Floor
+        else: final_val = max(final_val, 8.5) # Rural Floor
 
-        # 4. Result Formatting
-        currency = f"₹{round(val/100, 2)} Crore" if val >= 100 else f"₹{round(val, 2)} Lakh"
-        rate = int((val * 100000) / sqft) if sqft > 0 else 0
+        currency = f"₹{final_val/100:.2f} Crore" if final_val >= 100 else f"₹{final_val:.1f} Lakh"
+        rate = int((final_val * 100000) / sqft)
 
         return f"""
-            <div style='color: #10b981; font-size: 26px; font-weight: 800;'>{currency}</div>
-            <div style='color: #94a3b8; font-size: 14px; margin-top: 5px;'>
-                <i class='fas fa-map-marker-alt'></i> {city_display.title()} <b>({location_label})</b>
-            </div>
-            <div style='margin-top: 10px; border-top: 1px solid #334155; padding-top: 10px; font-size: 12px; display: flex; justify-content: space-between;'>
-                <span>Rate: ₹{rate}/sqft</span>
-                <span>Tier Score: {tier}/2</span>
+            <div style='background:rgba(99,102,241,0.1); padding:20px; border-radius:15px; border:1px solid #6366f1;'>
+                <div style='color:#6366f1; font-size:12px; font-weight:800; text-transform:uppercase;'>Market Valuation</div>
+                <div style='color:#10b981; font-size:32px; font-weight:900;'>{currency}</div>
+                <div style='color:#94a3b8; font-size:14px; margin-top:5px;'>{city_name.title()} | <b>{loc_label}</b></div>
+                <div style='margin-top:15px; font-size:12px; color:#64748b; border-top:1px solid rgba(255,255,255,0.05); padding-top:10px;'>
+                    Avg Rate: ₹{rate:,}/sqft
+                </div>
             </div>
         """
     except Exception as e:
         return f"Error: {str(e)}"
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+if __name__ == '__main__':
+    app.run(debug=True)
