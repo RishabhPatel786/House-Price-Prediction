@@ -3,9 +3,11 @@ import pickle
 import numpy as np
 import pandas as pd
 import requests
+import os
 
 app = Flask(__name__)
 
+# Load the Linear Regression Pipeline
 with open('model.pkl', 'rb') as f:
     model = pickle.load(f)
 
@@ -16,42 +18,52 @@ def home():
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-        # Inputs from Form
+        # 1. Capture Inputs
         sqft = float(request.form.get('sqft', 1000))
-        dist_cat = int(request.form.get('distance', 0)) # User input: 0 to 4
+        bhk = int(request.form.get('bhk', 2))
+        age = int(request.form.get('age', 5))
+        floor = int(request.form.get('floor', 1))
+        road_width = int(request.form.get('road_width', 30))
+        d_road = float(request.form.get('dist_road', 0.5))
+        d_metro = float(request.form.get('dist_metro', 5.0))
+        
+        # 2. Tier Detection via Map
+        tier = 0
         lat, lng = request.form.get('lat'), request.form.get('lng')
-
-        tier, multiplier, city = 0, 1.0, "Area"
-
-        # Geo-Detection
         if lat and lng:
-            headers = {'User-Agent': 'BharatEstateAI_v11'}
-            res = requests.get(f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lng}", headers=headers).json()
+            res = requests.get(f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lng}", headers={'User-Agent':'BE_AI'}).json()
             addr = res.get('display_name', '').lower()
-            city = res.get('address', {}).get('city') or res.get('address', {}).get('town') or "Location"
+            if any(c in addr for c in ['mumbai', 'delhi', 'bangalore', 'pune', 'indore', 'hyderabad']): tier = 2
+            elif any(c in addr for c in ['jabalpur', 'bhopal', 'gwalior', 'lucknow', 'nagpur']): tier = 1
 
-            if any(c in addr for c in ['mumbai', 'delhi', 'bangalore', 'pune', 'indore']): tier = 2
-            elif any(c in addr for c in ['jabalpur', 'bhopal', 'gwalior', 'jaipur']): tier = 1
-
-        # Distance Multiplier Logic (Based on your data)
-        # 0: Road touch, 1: <500m, 2: 500m-1km, 3: 1-2km, 4: 2km+
-        dist_multipliers = {0: 1.0, 1: 0.85, 2: 0.75, 3: 0.60, 4: 0.40}
-        penalty = dist_multipliers.get(dist_cat, 0.5)
-
-        # AI Prediction
-        features = pd.DataFrame([[sqft, tier, dist_cat, 0]], columns=['sqft','tier','dist','type'])
-        base_val = model.predict(features)[0]
+        # 3. Features for Linear Model
+        features = pd.DataFrame([[sqft, bhk, age, tier, d_road, d_metro, 
+                                 int(request.form.get('furnish', 1)), 
+                                 floor, int(request.form.get('type', 0)), road_width]], 
+                                columns=['sqft','bhk','age','tier','dist_road','dist_metro','furnish','floor','type','road_width'])
         
-        final_val = base_val * penalty
+        # Base Linear Prediction
+        prediction = model.predict(features)[0]
+
+        # 4. Expert Adjustments (Manual Multipliers for accuracy)
+        multiplier = 1.0
+        if request.form.get('amenities') == 'on': multiplier += 0.15
+        if request.form.get('gated') == 'on': multiplier += 0.12
+        if request.form.get('main_road_touch') == 'on': multiplier += 0.20
         
-        # Hard Floors for Cities
-        if tier == 2: final_val = max(final_val, 45.0)
-        elif tier == 1: final_val = max(final_val, 25.0)
+        # Apply Distance-based impact from your table
+        if d_road > 2.0: multiplier *= 0.60  # 40% discount for interior
+        elif d_road < 0.1: multiplier *= 1.15 # 15% premium for road touch
+        
+        final_val = max(prediction * multiplier, 8.5) # Inflation floor
 
         return jsonify({
             'price': f"₹{final_val/100:.2f} Cr" if final_val >= 100 else f"₹{final_val:.1f} L",
             'rate': f"₹{int((final_val * 100000) / sqft):,}/sqft",
-            'city': city.title()
+            'tier': tier
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+if __name__ == "__main__":
+    app.run(debug=True)
