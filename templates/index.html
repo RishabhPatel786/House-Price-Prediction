@@ -3,220 +3,980 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Project Report — Bharat Estate AI</title>
+  <title>Bharat Estate AI — House Price Predictor</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
   <style>
-    :root { --bg:#080c18;--card:#0e1525;--border:rgba(255,255,255,0.07);--accent:#3b82f6;--green:#10b981;--amber:#f59e0b;--text:#e2e8f0;--muted:#64748b;--radius:18px; }
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
-    body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 60% 40% at 20% 20%,rgba(59,130,246,0.07) 0%,transparent 60%),radial-gradient(ellipse 50% 50% at 80% 80%,rgba(16,185,129,0.05) 0%,transparent 55%);}
-    header{position:relative;z-index:10;padding:18px 40px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);backdrop-filter:blur(10px);}
-    .logo{display:flex;align-items:center;gap:12px;font-family:'Syne',sans-serif;font-size:20px;font-weight:800;}
-    .logo-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#60a5fa);display:grid;place-items:center;font-size:16px;}
-    .badge{font-size:11px;font-weight:500;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.25);color:#93c5fd;padding:3px 10px;border-radius:20px;}
-    .navbar{display:flex;gap:4px;}
-    .nav-link{display:flex;align-items:center;gap:7px;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:500;color:var(--muted);text-decoration:none;transition:all 0.2s;}
-    .nav-link:hover{color:var(--text);background:rgba(255,255,255,0.05);}
-    .nav-link.active{color:var(--text);background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.2);}
-    .nav-link i{font-size:12px;}
-    .page{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:50px 40px 80px;}
-    .report-header{text-align:center;margin-bottom:50px;padding:40px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);position:relative;overflow:hidden;}
-    .report-header::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),#a78bfa,var(--green));}
-    .report-header h1{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;margin-bottom:8px;}
-    .report-header p{color:var(--muted);font-size:14px;margin-bottom:16px;}
-    .meta-row{display:flex;justify-content:center;gap:24px;flex-wrap:wrap;}
-    .meta-item{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;}
-    .meta-item i{color:var(--accent);}
-    .section{margin-bottom:32px;}
-    .section-num{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
-    .section h2{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:16px;position:relative;overflow:hidden;}
-    .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(59,130,246,0.3),transparent);}
-    p{color:#94a3b8;line-height:1.8;font-size:14px;margin-bottom:12px;}
-    p:last-child{margin-bottom:0;}
-    .highlight{color:var(--text);font-weight:500;}
-    .formula-box{background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);border-radius:12px;padding:18px 20px;margin:16px 0;font-family:'Courier New',monospace;font-size:13px;color:#a5b4fc;line-height:1.8;}
-    table{width:100%;border-collapse:collapse;font-size:13px;}
-    th{font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);}
-    td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.04);color:#94a3b8;}
-    tr:hover td{background:rgba(255,255,255,0.02);}
-    .tag{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:8px;background:rgba(59,130,246,0.12);color:#93c5fd;border:1px solid rgba(59,130,246,0.2);}
-    .tag.green{background:rgba(16,185,129,0.12);color:#6ee7b7;border-color:rgba(16,185,129,0.2);}
-    .tag.amber{background:rgba(245,158,11,0.12);color:#fcd34d;border-color:rgba(245,158,11,0.2);}
-    .result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
-    .result-card{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;}
-    .result-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--green);margin-bottom:4px;}
-    .result-label{font-size:11px;color:var(--muted);}
-    .conclusion-box{background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.15);border-radius:14px;padding:24px;}
-    .conclusion-box h3{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--green);margin-bottom:12px;}
-    @media(max-width:700px){.page{padding:24px 16px 50px;}.result-grid{grid-template-columns:1fr 1fr;}.navbar{display:none;}.meta-row{gap:14px;}}
+    :root {
+      --bg:     #080c18;
+      --card:   #0e1525;
+      --border: rgba(255,255,255,0.07);
+      --accent: #3b82f6;
+      --green:  #10b981;
+      --amber:  #f59e0b;
+      --text:   #e2e8f0;
+      --muted:  #64748b;
+      --radius: 18px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; overflow-x: hidden;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 60% 40% at 15% 20%, rgba(59,130,246,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 50% at 85% 80%, rgba(16,185,129,0.06) 0%, transparent 55%);
+    }
+
+    /* ── Welcome Modal ─────────────────────────────────── */
+    #welcome-overlay {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(8,12,24,0.92);
+      backdrop-filter: blur(12px);
+      display: flex; align-items: center; justify-content: center;
+      animation: fadeIn 0.4s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    .welcome-box {
+      background: var(--card);
+      border: 1px solid rgba(59,130,246,0.25);
+      border-radius: 24px;
+      padding: 44px 40px;
+      max-width: 480px; width: 90%;
+      text-align: center;
+      position: relative; overflow: hidden;
+      animation: slideUp 0.5s ease 0.1s both;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(59,130,246,0.1);
+    }
+    .welcome-box::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--accent), #a78bfa, var(--green));
+    }
+    .welcome-emoji { font-size: 52px; margin-bottom: 16px; display: block; }
+    .welcome-box h1 {
+      font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800;
+      margin-bottom: 10px; letter-spacing: -0.5px;
+    }
+    .welcome-box h1 span {
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .welcome-box p {
+      font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 24px;
+    }
+    .welcome-features {
+      display: flex; flex-direction: column; gap: 10px;
+      margin-bottom: 28px; text-align: left;
+    }
+    .welcome-feat {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border); border-radius: 10px;
+      font-size: 13px; color: #94a3b8;
+    }
+    .welcome-feat i { color: var(--accent); width: 16px; text-align: center; }
+    .btn-start {
+      width: 100%; padding: 14px;
+      background: linear-gradient(135deg, var(--accent), #6366f1);
+      border: none; border-radius: 12px;
+      color: white; font-family: 'Syne', sans-serif;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+      box-shadow: 0 4px 20px rgba(59,130,246,0.35);
+    }
+    .btn-start:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    /* ── Header ────────────────────────────────────────── */
+    header {
+      position: relative; z-index: 10;
+      padding: 16px 40px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(10px);
+    }
+    .logo {
+      display: flex; align-items: center; gap: 12px;
+      font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800;
+      letter-spacing: -0.3px; text-decoration: none; color: var(--text);
+    }
+    .logo-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), #60a5fa);
+      display: grid; place-items: center; font-size: 16px; flex-shrink: 0;
+    }
+    .badge {
+      font-size: 11px; font-weight: 500;
+      background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.25);
+      color: #93c5fd; padding: 3px 10px; border-radius: 20px;
+    }
+    /* ── Navbar ────────────────────────────────────────── */
+    .navbar { display: flex; gap: 4px; }
+    .nav-link {
+      display: flex; align-items: center; gap: 7px;
+      padding: 8px 16px; border-radius: 10px;
+      font-size: 13px; font-weight: 500; color: var(--muted);
+      text-decoration: none; transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+    .nav-link:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+    .nav-link.active {
+      color: var(--text); background: rgba(59,130,246,0.12);
+      border-color: rgba(59,130,246,0.2);
+    }
+    .nav-link i { font-size: 12px; }
+
+    /* ── Main Layout ───────────────────────────────────── */
+    main {
+      position: relative; z-index: 1;
+      display: grid; grid-template-columns: 420px 1fr;
+      gap: 24px; padding: 28px 40px 40px;
+      max-width: 1360px; margin: 0 auto;
+    }
+
+    /* ── Card ──────────────────────────────────────────── */
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px;
+      position: relative; overflow: hidden;
+    }
+    .card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(59,130,246,0.4), transparent);
+    }
+
+    /* ── Section title ─────────────────────────────────── */
+    .section-title {
+      font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700;
+      margin-bottom: 22px; display: flex; align-items: center; gap: 10px;
+    }
+    .section-title i { color: var(--accent); font-size: 16px; }
+
+    /* ── Form fields ───────────────────────────────────── */
+    .field-group { margin-bottom: 14px; }
+    .field-label {
+      font-size: 11px; font-weight: 500; letter-spacing: 0.6px;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 6px; display: block;
+    }
+    input[type="number"], select {
+      width: 100%; padding: 11px 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 10px; color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-size: 14px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      appearance: none; outline: none;
+    }
+    input[type="number"]:focus, select:focus {
+      border-color: rgba(59,130,246,0.5);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+    }
+    input[type="number"].error { border-color: #ef4444 !important; }
+    .error-msg { font-size: 11px; color: #ef4444; margin-top: 4px; display: none; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* ── Amenities toggle ──────────────────────────────── */
+    .amenity-toggle {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px; cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      margin-bottom: 20px;
+    }
+    .amenity-toggle:hover { background: rgba(255,255,255,0.05); }
+    .amenity-toggle input { display: none; }
+    .toggle-box {
+      width: 18px; height: 18px; border-radius: 5px;
+      border: 1.5px solid var(--muted);
+      display: grid; place-items: center;
+      transition: all 0.2s; flex-shrink: 0;
+    }
+    .amenity-toggle input:checked ~ .toggle-box {
+      background: var(--accent); border-color: var(--accent);
+    }
+    .toggle-box i { font-size: 10px; opacity: 0; transition: opacity 0.15s; }
+    .amenity-toggle input:checked ~ .toggle-box i { opacity: 1; }
+    .amenity-text { font-size: 13px; }
+    .amenity-text small { display: block; color: var(--muted); font-size: 11px; margin-top: 1px; }
+
+    /* ── Pin status ────────────────────────────────────── */
+    .pin-status {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: var(--muted);
+      margin-bottom: 16px; padding: 9px 12px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06); border-radius: 8px;
+    }
+    .pin-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #ef4444; flex-shrink: 0;
+      animation: pulse 2s infinite;
+    }
+    .pin-dot.active { background: var(--green); animation: none; }
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+      50%      { box-shadow: 0 0 0 5px rgba(239,68,68,0); }
+    }
+
+    /* ── Submit button ─────────────────────────────────── */
+    .btn-predict {
+      width: 100%; padding: 14px;
+      background: linear-gradient(135deg, var(--accent), #6366f1);
+      border: none; border-radius: 12px;
+      color: white; font-family: 'Syne', sans-serif;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(59,130,246,0.3);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-predict:hover { opacity: 0.92; transform: translateY(-1px); }
+    .btn-predict:active { transform: translateY(0); }
+    .btn-predict:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    /* ── Result panel ──────────────────────────────────── */
+    #result-section { margin-top: 20px; display: none; animation: slideUp 0.4s ease; }
+    .result-price {
+      font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800;
+      color: var(--green); letter-spacing: -1px; margin-bottom: 4px;
+    }
+    .result-range { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+    .result-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .meta-chip {
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 12px;
+    }
+    .meta-chip .label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+    .meta-chip .value { font-size: 14px; font-weight: 500; }
+    .tier-bar {
+      display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted);
+      padding: 10px 14px;
+      background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.15); border-radius: 10px;
+    }
+    .tier-dots { display: flex; gap: 4px; }
+    .tier-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.1); }
+    .tier-dot.filled { background: var(--green); }
+
+    /* ── Model info ────────────────────────────────────── */
+    .model-info {
+      margin-top: 20px; padding: 14px 16px;
+      background: rgba(59,130,246,0.04); border: 1px solid rgba(59,130,246,0.12); border-radius: 12px;
+    }
+    .model-info h4 {
+      font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+      color: #93c5fd; margin-bottom: 8px; display: flex; align-items: center; gap: 7px;
+    }
+    .model-info p { font-size: 12px; color: var(--muted); line-height: 1.6; }
+    .model-info code { background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 4px; font-size: 11px; color: #a5b4fc; }
+
+    /* ── Map panel ─────────────────────────────────────── */
+    .map-card { display: flex; flex-direction: column; gap: 16px; }
+    .search-row { display: flex; gap: 10px; align-items: center; }
+    .search-input {
+      flex: 1; padding: 11px 16px;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 10px; color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-size: 14px;
+      outline: none; transition: border-color 0.2s;
+    }
+    .search-input:focus { border-color: rgba(59,130,246,0.45); }
+    .btn-search {
+      padding: 11px 18px;
+      background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.25);
+      border-radius: 10px; color: #93c5fd; font-size: 14px; cursor: pointer;
+      transition: background 0.2s; white-space: nowrap;
+    }
+    .btn-search:hover { background: rgba(59,130,246,0.22); }
+    #map { flex: 1; min-height: 480px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.07); }
+    .map-hint { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+
+    /* ── Analytics Section ─────────────────────────────── */
+    .analytics-section {
+      position: relative; z-index: 1;
+      max-width: 1360px; margin: 0 auto; padding: 0 40px 50px;
+    }
+    .analytics-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px;
+    }
+    .analytics-title {
+      font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .analytics-title i { color: var(--accent); }
+    .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-bottom: 22px; }
+    .chart-wrap { position: relative; width: 100%; height: 280px; }
+    .filter-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+    .tab-btn {
+      padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 500;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--muted); cursor: pointer; transition: all 0.2s;
+    }
+    .tab-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+    .tab-btn:hover:not(.active) { border-color: rgba(59,130,246,0.4); color: var(--text); }
+
+    /* ── Comparison Tool ───────────────────────────────── */
+    .compare-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: start; }
+    .compare-vs {
+      display: flex; align-items: center; justify-content: center;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.25);
+      color: #93c5fd; font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: 13px; margin-top: 28px; flex-shrink: 0;
+    }
+    .compare-card {
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+      border-radius: 14px; padding: 18px;
+    }
+    .compare-card h4 {
+      font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+      margin-bottom: 14px; color: var(--muted); display: flex; align-items: center; gap: 7px;
+    }
+    .compare-card h4 i { color: var(--accent); }
+    .compare-field { margin-bottom: 10px; }
+    .compare-field label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .compare-field input, .compare-field select { padding: 9px 12px; font-size: 13px; margin-bottom: 0; }
+    .btn-compare {
+      width: 100%; margin-top: 14px; padding: 11px;
+      background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.25);
+      border-radius: 10px; color: #93c5fd;
+      font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-compare:hover { background: rgba(59,130,246,0.2); }
+    .compare-result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .compare-result-card {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: 14px; padding: 18px; text-align: center;
+    }
+    .compare-result-card.winner { border-color: rgba(16,185,129,0.35); background: rgba(16,185,129,0.05); }
+    .compare-result-card .c-price { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+    .compare-result-card.winner .c-price { color: var(--green); }
+    .compare-result-card:not(.winner) .c-price { color: #94a3b8; }
+    .compare-result-card .c-label { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+    .compare-stat { display: flex; justify-content: space-between; font-size: 12px; padding: 5px 0; border-top: 1px solid var(--border); }
+    .compare-stat .s-label { color: var(--muted); }
+    .winner-badge {
+      display: inline-block; font-size: 10px; font-weight: 700;
+      background: var(--green); color: #052e16; padding: 2px 8px;
+      border-radius: 10px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+
+    /* ── Similar Properties ────────────────────────────── */
+    .similar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 12px; margin-top: 14px; }
+    .sim-card {
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px; transition: border-color 0.2s;
+    }
+    .sim-card:hover { border-color: rgba(59,130,246,0.3); }
+    .sim-price { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; color: var(--green); margin-bottom: 6px; }
+    .sim-detail { font-size: 12px; color: var(--muted); line-height: 1.8; }
+    .sim-tag {
+      display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 8px; margin-bottom: 8px;
+      background: rgba(59,130,246,0.1); color: #93c5fd; border: 1px solid rgba(59,130,246,0.2);
+    }
+
+    /* ── Divider ───────────────────────────────────────── */
+    .section-divider { border: none; border-top: 1px solid var(--border); margin: 0 40px 30px; }
+
+    /* ── Toast ─────────────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(60px);
+      background: #1e293b; border: 1px solid rgba(255,255,255,0.1);
+      padding: 10px 20px; border-radius: 10px; font-size: 13px;
+      color: var(--text); transition: transform 0.3s ease; z-index: 999;
+      pointer-events: none; white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ── Responsive ────────────────────────────────────── */
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; padding: 16px 16px 32px; }
+      header { padding: 14px 16px; }
+      .navbar { gap: 2px; }
+      .nav-link { padding: 7px 10px; font-size: 12px; }
+      .nav-link span { display: none; }
+      #map { min-height: 340px; }
+      .analytics-grid { grid-template-columns: 1fr; }
+      .compare-grid { grid-template-columns: 1fr; }
+      .compare-vs { display: none; }
+      .analytics-section { padding: 0 16px 40px; }
+      .section-divider { margin: 0 16px 24px; }
+    }
   </style>
 </head>
 <body>
+
+<!-- ── Welcome Modal ────────────────────────────────────────── -->
+<div id="welcome-overlay">
+  <div class="welcome-box">
+    <span class="welcome-emoji">🏠</span>
+    <h1>Welcome to <span>Bharat Estate AI</span></h1>
+    <p>Predict Indian house prices using Machine Learning. Pin any location on the map and get an instant price estimate.</p>
+    <div class="welcome-features">
+      <div class="welcome-feat"><i class="fas fa-brain"></i> Stratified Linear Regression Model</div>
+      <div class="welcome-feat"><i class="fas fa-map-location-dot"></i> Auto Location Tier Detection (Rural / Tier-2 / Metro)</div>
+      <div class="welcome-feat"><i class="fas fa-chart-line"></i> Market Analytics Dashboard</div>
+      <div class="welcome-feat"><i class="fas fa-scale-balanced"></i> Property Comparison Tool</div>
+    </div>
+    <button class="btn-start" onclick="closeWelcome()">
+      <i class="fas fa-rocket"></i> &nbsp;Get Started
+    </button>
+  </div>
+</div>
+
+<!-- ── Header ──────────────────────────────────────────────── -->
 <header>
-  <div class="logo"><div class="logo-icon">🏠</div> Bharat Estate AI</div>
+  <a href="/" class="logo">
+    <div class="logo-icon">🏠</div>
+    Bharat Estate AI
+  </a>
   <nav class="navbar">
-    <a href="/" class="nav-link"><i class="fas fa-house-chimney"></i> Predictor</a>
-    <a href="/dashboard" class="nav-link"><i class="fas fa-chart-bar"></i> Dashboard</a>
-    <a href="/about" class="nav-link"><i class="fas fa-circle-info"></i> About</a>
-    <a href="/report" class="nav-link active"><i class="fas fa-file-lines"></i> Report</a>
+    <a href="/" class="nav-link active"><i class="fas fa-house-chimney"></i> <span>Predictor</span></a>
+    <a href="/dashboard" class="nav-link"><i class="fas fa-chart-bar"></i> <span>Dashboard</span></a>
+    <a href="/about" class="nav-link"><i class="fas fa-circle-info"></i> <span>About</span></a>
+    <a href="/report" class="nav-link"><i class="fas fa-file-lines"></i> <span>Report</span></a>
   </nav>
-  <span class="badge">Project Report</span>
+  <span class="badge">Linear Regression · 2025</span>
 </header>
 
-<div class="page">
+<!-- ── Main ────────────────────────────────────────────────── -->
+<main>
 
-  <!-- Cover -->
-  <div class="report-header">
-    <h1>🏠 AI-Based House Price Prediction</h1>
-    <p>Using Linear Regression on Indian Residential Real Estate Data</p>
-    <div class="meta-row">
-      <div class="meta-item"><i class="fas fa-user"></i> Rishabh Patel</div>
-      <div class="meta-item"><i class="fas fa-graduation-cap"></i> Minor Project · Computer Science</div>
-      <div class="meta-item"><i class="fas fa-calendar"></i> 2025</div>
-      <div class="meta-item"><i class="fas fa-code-branch"></i> Python · Flask · scikit-learn</div>
+  <!-- LEFT: Prediction Form -->
+  <div class="card">
+    <div class="section-title">
+      <i class="fas fa-chart-line"></i> Price Predictor
     </div>
-  </div>
 
-  <!-- 1. Abstract -->
-  <div class="section">
-    <div class="section-num">Section 1</div>
-    <h2>Abstract</h2>
-    <div class="card">
-      <p>This project presents a <span class="highlight">machine learning web application</span> that predicts residential property prices across India using <span class="highlight">Stratified Linear Regression</span> — separate regression models trained per location tier (Rural, Tier-2, Metro). The system integrates reverse geocoding to automatically detect the property's location tier from a map pin, enabling realistic, tier-appropriate price estimation.</p>
-      <p>The application is built with a <span class="highlight">Flask backend</span>, served via Gunicorn, deployed on Render, and features a modern dark-theme frontend with an interactive Leaflet.js map, Chart.js analytics dashboard, and a property comparison tool.</p>
-    </div>
-  </div>
+    <form id="priceForm" novalidate>
 
-  <!-- 2. Problem Statement -->
-  <div class="section">
-    <div class="section-num">Section 2</div>
-    <h2>Problem Statement</h2>
-    <div class="card">
-      <p>House price estimation in India is highly non-uniform. A 1000 sq ft apartment in Mumbai can cost ₹1.2 Cr while the same property in a village may cost ₹8 Lakh. Traditional single-model regression fails to capture this <span class="highlight">tier-based price gap</span>.</p>
-      <p>The goal of this project is to build a system that:</p>
-      <p>① Accepts property details (area, bedrooms, type, furnishing)<br>
-         ② Auto-detects location tier via map pin<br>
-         ③ Applies the appropriate regression model for that tier<br>
-         ④ Returns a realistic price estimate with confidence range</p>
-    </div>
-  </div>
-
-  <!-- 3. Dataset -->
-  <div class="section">
-    <div class="section-num">Section 3</div>
-    <h2>Dataset Description</h2>
-    <div class="card">
-      <p>A synthetic dataset was designed based on <span class="highlight">2024–25 Indian real estate market rates</span>, with prices calibrated from NoBroker, 99acres, and Magicbricks data ranges.</p>
-      <table>
-        <thead><tr><th>Feature</th><th>Type</th><th>Values</th><th>Role</th></tr></thead>
-        <tbody>
-          <tr><td>sqft</td><td>Continuous</td><td>400 – 5000</td><td>Primary price driver</td></tr>
-          <tr><td>beds</td><td>Integer</td><td>1 – 5 (realistic per sqft)</td><td>Space indicator</td></tr>
-          <tr><td>baths</td><td>Integer</td><td>1 – 4</td><td>Space indicator</td></tr>
-          <tr><td>tier</td><td>Categorical</td><td>0=Rural, 1=Tier-2, 2=Metro</td><td>Location multiplier</td></tr>
-          <tr><td>prop_type</td><td>Categorical</td><td>0=Apt, 1=House, 2=Villa</td><td>+0%, +20%, +60%</td></tr>
-          <tr><td>furnish</td><td>Categorical</td><td>0=Unfurnished, 1=Semi, 2=Fully</td><td>+0%, +13%, +28%</td></tr>
-          <tr><td>price</td><td>Continuous</td><td>₹1.5L – ₹600L</td><td>Target variable</td></tr>
-        </tbody>
-      </table>
-      <p style="margin-top:14px;">Total samples: <span class="highlight">402</span> (114 Rural · 144 Tier-2 · 144 Metro)</p>
-    </div>
-  </div>
-
-  <!-- 4. Methodology -->
-  <div class="section">
-    <div class="section-num">Section 4</div>
-    <h2>Methodology</h2>
-    <div class="card">
-      <p><span class="highlight">Stratified Linear Regression</span> was used — three separate LR models, one per location tier. This approach handles the non-linear jump in prices between tiers while keeping each individual model linear and interpretable.</p>
-      <div class="formula-box">
-        Price = β₀ + β₁·sqft + β₂·beds + β₃·baths + β₄·prop_type + β₅·furnish<br><br>
-        Rural  model: β₁ = 6.11   (₹/sqft scale)<br>
-        Tier-2 model: β₁ = 41.42  (₹/sqft scale)<br>
-        Metro  model: β₁ = 152.38 (₹/sqft scale)
+      <div class="field-group">
+        <label class="field-label">Built-up Area (sq ft)</label>
+        <input type="number" name="sqft" id="sqft" placeholder="e.g. 1200" min="100" max="20000">
+        <div class="error-msg" id="err-sqft">Enter valid area between 100 and 20,000 sq ft</div>
       </div>
-      <p>Each model uses <span class="highlight">StandardScaler</span> (zero mean, unit variance) before fitting to ensure all features contribute proportionally to the regression.</p>
-      <p><span class="highlight">Location tier</span> is determined at prediction time via reverse geocoding (Nominatim API) — the user pins a location on the map and the backend classifies it into Rural / Tier-2 / Metro automatically.</p>
-    </div>
-  </div>
 
-  <!-- 5. Results -->
-  <div class="section">
-    <div class="section-num">Section 5</div>
-    <h2>Results</h2>
-    <div class="card">
-      <div class="result-grid" style="margin-bottom:20px;">
-        <div class="result-card">
-          <div class="result-val">0.969</div>
-          <div class="result-label">Rural Model R²</div>
+      <div class="row">
+        <div class="field-group">
+          <label class="field-label">Bedrooms</label>
+          <input type="number" name="beds" id="beds" placeholder="e.g. 3" min="1" max="10">
+          <div class="error-msg" id="err-beds">Enter 1–10 bedrooms</div>
         </div>
-        <div class="result-card">
-          <div class="result-val">0.943</div>
-          <div class="result-label">Tier-2 Model R²</div>
-        </div>
-        <div class="result-card">
-          <div class="result-val">0.949</div>
-          <div class="result-label">Metro Model R²</div>
+        <div class="field-group">
+          <label class="field-label">Bathrooms</label>
+          <input type="number" name="baths" id="baths" placeholder="e.g. 2" min="1" max="10">
         </div>
       </div>
-      <table>
-        <thead><tr><th>Test Case</th><th>Tier</th><th>Predicted Price</th><th>Status</th></tr></thead>
-        <tbody>
-          <tr><td>800 sqft Unfurnished Apt</td><td>Rural</td><td>₹5.6 L</td><td><span class="tag green">✓ Logical</span></td></tr>
-          <tr><td>800 sqft Unfurnished Apt</td><td>Tier-2</td><td>₹9.7 L</td><td><span class="tag green">✓ Logical</span></td></tr>
-          <tr><td>800 sqft Unfurnished Apt</td><td>Metro</td><td>₹15.0 L</td><td><span class="tag green">✓ Logical</span></td></tr>
-          <tr><td>800 sqft Fully Furnished Apt</td><td>Tier-2</td><td>₹29.4 L</td><td><span class="tag green">✓ +28% uplift</span></td></tr>
-          <tr><td>800 sqft Semi Villa</td><td>Tier-2</td><td>₹84.5 L</td><td><span class="tag green">✓ Villa premium</span></td></tr>
-          <tr><td>2000 sqft Fully House</td><td>Metro</td><td>₹2.48 Cr</td><td><span class="tag green">✓ Logical</span></td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
 
-  <!-- 6. System Architecture -->
-  <div class="section">
-    <div class="section-num">Section 6</div>
-    <h2>System Architecture</h2>
-    <div class="card">
-      <div class="formula-box">
-User Browser
-    │
-    ├─ GET  /           → index.html  (Predictor UI + Map)
-    ├─ GET  /dashboard  → dashboard.html (Charts & Analytics)
-    ├─ GET  /about      → about.html  (Project Info)
-    ├─ GET  /report     → report.html (This Page)
-    └─ POST /predict    → Flask API
-                              │
-                        ┌─────▼──────────────────────┐
-                        │ 1. Parse form inputs        │
-                        │ 2. Validate beds vs sqft    │
-                        │ 3. Reverse geocode lat/lng  │
-                        │ 4. Detect tier (0/1/2)      │
-                        │ 5. Load tier's LR model     │
-                        │ 6. Predict price            │
-                        │ 7. Return JSON result       │
-                        └────────────────────────────┘
+      <div class="field-group">
+        <label class="field-label">Property Type</label>
+        <select name="prop_type" id="prop_type">
+          <option value="0">🏢  Apartment / Flat</option>
+          <option value="1">🏡  Independent House</option>
+          <option value="2">💎  Luxury Villa / Bungalow</option>
+        </select>
       </div>
-      <p>Deployed on <span class="highlight">Render</span> with Gunicorn as the WSGI server. CI/CD via GitHub — every git push triggers an automatic redeploy.</p>
+
+      <div class="field-group">
+        <label class="field-label">Furnishing Status</label>
+        <select name="furnish" id="furnish">
+          <option value="0">Unfurnished</option>
+          <option value="1">Semi-Furnished</option>
+          <option value="2">Fully Furnished</option>
+        </select>
+      </div>
+
+      <label class="amenity-toggle">
+        <input type="checkbox" name="amenities" id="amenities">
+        <span class="toggle-box"><i class="fas fa-check"></i></span>
+        <div class="amenity-text">
+          Premium Amenities
+          <small>Pool · Gym · Security · Clubhouse (+15%)</small>
+        </div>
+      </label>
+
+      <input type="hidden" id="lat" name="lat">
+      <input type="hidden" id="lng" name="lng">
+
+      <div class="pin-status">
+        <span class="pin-dot" id="pinDot"></span>
+        <span id="pinText">Click on the map to pin your property location</span>
+      </div>
+
+      <button type="submit" class="btn-predict" id="submitBtn">
+        <i class="fas fa-brain"></i> Analyze Price
+      </button>
+    </form>
+
+    <!-- Result -->
+    <div id="result-section">
+      <div style="border-top:1px solid var(--border); margin:20px 0;"></div>
+      <div class="result-price" id="res-price">—</div>
+      <div class="result-range">
+        Range: <span id="res-low">—</span> → <span id="res-high">—</span>
+        <span style="color:var(--muted); margin-left:4px;">(±12%)</span>
+      </div>
+      <div class="result-meta">
+        <div class="meta-chip"><div class="label">Rate / sq ft</div><div class="value" id="res-rate">—</div></div>
+        <div class="meta-chip"><div class="label">Location</div><div class="value" id="res-city">—</div></div>
+        <div class="meta-chip"><div class="label">Property</div><div class="value" id="res-prop">—</div></div>
+        <div class="meta-chip"><div class="label">Furnishing</div><div class="value" id="res-furnish">—</div></div>
+      </div>
+      <div class="tier-bar">
+        <div class="tier-dots">
+          <div class="tier-dot" id="td0"></div>
+          <div class="tier-dot" id="td1"></div>
+          <div class="tier-dot" id="td2"></div>
+        </div>
+        <span id="res-tier">—</span>
+      </div>
+    </div>
+
+    <!-- Model Info -->
+    <div class="model-info">
+      <h4><i class="fas fa-info-circle"></i> About the Model</h4>
+      <p>Uses <code>Stratified Linear Regression</code> — separate scikit-learn models per tier (Rural / Tier-2 / Metro). Location is auto-detected from map pin via reverse geocoding. R² ≈ 0.94–0.97.</p>
     </div>
   </div>
 
-  <!-- 7. Conclusion -->
-  <div class="section">
-    <div class="section-num">Section 7</div>
-    <h2>Conclusion</h2>
-    <div class="conclusion-box">
-      <h3><i class="fas fa-check-circle"></i> Key Achievements</h3>
-      <p>This project successfully demonstrates end-to-end machine learning deployment. The stratified Linear Regression approach achieves R² scores above 0.94 across all tiers, with logically consistent predictions — furnishing, property type, and location tier all correctly influence the output price.</p>
-      <p>The system handles edge cases (too many beds for small area), provides confidence ranges, includes a market analytics dashboard, a comparison tool, and is publicly accessible via Render deployment.</p>
-      <p><span class="highlight">Future scope:</span> Integrate real scraped data from 99acres/MagicBricks, add Polynomial Regression comparison, and include neighbourhood-level granularity using pincode-based pricing.</p>
+  <!-- RIGHT: Map -->
+  <div class="card map-card">
+    <div class="section-title">
+      <i class="fas fa-map-location-dot"></i> Pin Property Location
+    </div>
+    <div class="search-row">
+      <input type="text" class="search-input" id="cityIn" placeholder="Search city / area  (e.g. Jabalpur, Andheri Mumbai)">
+      <button class="btn-search" id="searchBtn" onclick="searchLocation()">
+        <i class="fas fa-magnifying-glass"></i> Search
+      </button>
+    </div>
+    <div id="map"></div>
+    <div class="map-hint">
+      <i class="fas fa-circle-info" style="color:var(--accent)"></i>
+      Click anywhere on map to pin location. Tier (Metro / Tier-2 / Rural) is detected automatically.
     </div>
   </div>
 
-</div>
+</main>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- ── Analytics Section ───────────────────────────────────── -->
+<hr class="section-divider">
+<section class="analytics-section">
+
+  <div class="analytics-header">
+    <div class="analytics-title"><i class="fas fa-chart-area"></i> Market Analytics</div>
+    <span style="font-size:12px; color:var(--muted);">Indian Real Estate · 2018–2025</span>
+  </div>
+
+  <div class="analytics-grid">
+    <div class="card">
+      <div class="section-title" style="margin-bottom:12px;"><i class="fas fa-chart-line"></i> Year-wise Price Growth</div>
+      <div class="filter-tabs" id="trendTabs">
+        <button class="tab-btn active" onclick="setTrend('all',this)">All Tiers</button>
+        <button class="tab-btn" onclick="setTrend('metro',this)">Metro</button>
+        <button class="tab-btn" onclick="setTrend('tier2',this)">Tier-2</button>
+        <button class="tab-btn" onclick="setTrend('rural',this)">Rural</button>
+      </div>
+      <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:10px;">* Avg ₹/sqft — based on Indian market index data</div>
+    </div>
+    <div class="card">
+      <div class="section-title" style="margin-bottom:12px;"><i class="fas fa-building"></i> Avg Price by Property Type</div>
+      <div class="filter-tabs" id="typeTabs">
+        <button class="tab-btn active" onclick="setTypeChart('lakh',this)">In Lakhs</button>
+        <button class="tab-btn" onclick="setTypeChart('sqft',this)">Per Sq Ft</button>
+      </div>
+      <div class="chart-wrap"><canvas id="typeChart"></canvas></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:10px;">* Approximate average across all furnishing levels</div>
+    </div>
+  </div>
+
+  <!-- Comparison Tool -->
+  <div class="card" style="margin-bottom:22px;">
+    <div class="section-title"><i class="fas fa-scale-balanced"></i> Property Comparison Tool</div>
+    <div class="compare-grid">
+      <div class="compare-card">
+        <h4><i class="fas fa-house"></i> Property A</h4>
+        <div class="compare-field"><label>Area (sq ft)</label><input type="number" id="a-sqft" placeholder="e.g. 1200" min="100"></div>
+        <div class="row">
+          <div class="compare-field"><label>Beds</label><input type="number" id="a-beds" placeholder="3" min="1"></div>
+          <div class="compare-field"><label>Baths</label><input type="number" id="a-baths" placeholder="2" min="1"></div>
+        </div>
+        <div class="compare-field"><label>Tier</label>
+          <select id="a-tier"><option value="0">Rural</option><option value="1">Tier-2</option><option value="2" selected>Metro</option></select>
+        </div>
+        <div class="compare-field"><label>Type</label>
+          <select id="a-type"><option value="0">Apartment</option><option value="1" selected>House</option><option value="2">Villa</option></select>
+        </div>
+        <div class="compare-field"><label>Furnishing</label>
+          <select id="a-furnish"><option value="0">Unfurnished</option><option value="1" selected>Semi</option><option value="2">Fully Furnished</option></select>
+        </div>
+      </div>
+      <div class="compare-vs">VS</div>
+      <div class="compare-card">
+        <h4><i class="fas fa-house-chimney"></i> Property B</h4>
+        <div class="compare-field"><label>Area (sq ft)</label><input type="number" id="b-sqft" placeholder="e.g. 900" min="100"></div>
+        <div class="row">
+          <div class="compare-field"><label>Beds</label><input type="number" id="b-beds" placeholder="2" min="1"></div>
+          <div class="compare-field"><label>Baths</label><input type="number" id="b-baths" placeholder="2" min="1"></div>
+        </div>
+        <div class="compare-field"><label>Tier</label>
+          <select id="b-tier"><option value="0">Rural</option><option value="1" selected>Tier-2</option><option value="2">Metro</option></select>
+        </div>
+        <div class="compare-field"><label>Type</label>
+          <select id="b-type"><option value="0" selected>Apartment</option><option value="1">House</option><option value="2">Villa</option></select>
+        </div>
+        <div class="compare-field"><label>Furnishing</label>
+          <select id="b-furnish"><option value="0">Unfurnished</option><option value="1" selected>Semi</option><option value="2">Fully Furnished</option></select>
+        </div>
+      </div>
+    </div>
+    <button class="btn-compare" onclick="runComparison()"><i class="fas fa-scale-balanced"></i> Compare Properties</button>
+    <div id="compare-result" style="display:none; margin-top:20px;">
+      <div class="compare-result-grid" id="compare-result-grid"></div>
+    </div>
+  </div>
+
+  <!-- Similar Properties -->
+  <div class="card" id="similar-section" style="display:none;">
+    <div class="section-title"><i class="fas fa-layer-group"></i> Similar Properties in Area</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px;" id="similar-subtitle">Based on your last prediction</div>
+    <div class="similar-grid" id="similar-grid"></div>
+  </div>
+
+</section>
+
+<!-- ── Scripts ──────────────────────────────────────────────── -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+
+  // ── Welcome Modal ──────────────────────────────────────────
+  function closeWelcome() {
+    const el = document.getElementById('welcome-overlay');
+    el.style.opacity = '0';
+    el.style.transition = 'opacity 0.3s ease';
+    setTimeout(() => el.style.display = 'none', 300);
+  }
+
+  // ── Map ────────────────────────────────────────────────────
+  const map = L.map('map').setView([22.9734, 78.6569], 5);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© CartoDB'
+  }).addTo(map);
+
+  let marker = null;
+  const customIcon = L.divIcon({
+    html: `<div style="width:28px;height:28px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:linear-gradient(135deg,#3b82f6,#6366f1);border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.4);"></div>`,
+    iconSize: [28,28], iconAnchor: [14,28], className: ''
+  });
+
+  function setPin(lat, lng) {
+    if (marker) map.removeLayer(marker);
+    marker = L.marker([lat, lng], { icon: customIcon }).addTo(map);
+    document.getElementById('lat').value = lat;
+    document.getElementById('lng').value = lng;
+    document.getElementById('pinDot').classList.add('active');
+    document.getElementById('pinText').textContent = `📍 Pinned: ${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}`;
+  }
+
+  map.on('click', e => setPin(e.latlng.lat, e.latlng.lng));
+
+  // ── Search ─────────────────────────────────────────────────
+  function searchLocation() {
+    const q = document.getElementById('cityIn').value.trim();
+    if (!q) return;
+    const btn = document.getElementById('searchBtn');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=in&limit=1`, {
+      headers: { 'User-Agent': 'HousePricePredictorProject_Educational' }
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.length > 0) {
+        map.flyTo([d[0].lat, d[0].lon], 14, { duration: 1.2 });
+        setPin(parseFloat(d[0].lat), parseFloat(d[0].lon));
+      } else {
+        showToast('📍 Location not found. Try adding city name.');
+      }
+    })
+    .catch(() => showToast('⚠️ Search failed. Click on the map instead.'))
+    .finally(() => { btn.innerHTML = '<i class="fas fa-magnifying-glass"></i> Search'; btn.disabled = false; });
+  }
+
+  document.getElementById('cityIn').addEventListener('keypress', e => { if (e.key === 'Enter') searchLocation(); });
+
+  // ── Form Submit ────────────────────────────────────────────
+  document.getElementById('priceForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    if (!document.getElementById('lat').value) {
+      showToast('📍 Please pin a location on the map first!');
+      return;
+    }
+
+    const sqft = parseFloat(document.getElementById('sqft').value);
+    const beds = parseFloat(document.getElementById('beds').value);
+
+    if (!sqft || sqft < 100 || sqft > 20000) {
+      document.getElementById('sqft').classList.add('error');
+      document.getElementById('err-sqft').style.display = 'block';
+      return;
+    }
+    document.getElementById('sqft').classList.remove('error');
+    document.getElementById('err-sqft').style.display = 'none';
+
+    if (!beds || beds < 1) {
+      document.getElementById('err-beds').style.display = 'block';
+      return;
+    }
+    document.getElementById('err-beds').style.display = 'none';
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing…';
+
+    try {
+      const resp = await fetch('/predict', { method: 'POST', body: new FormData(e.target) });
+      const data = await resp.json();
+      if (data.error) {
+        showToast('⚠️ ' + data.error);
+      } else {
+        renderResult(data);
+        showSimilarProperties(data);
+      }
+    } catch (err) {
+      showToast('⚠️ Network error. Check server is running.');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-brain"></i> Analyze Price';
+    }
+  });
+
+  // ── Render Result ──────────────────────────────────────────
+  function renderResult(d) {
+    document.getElementById('res-price').textContent   = d.price;
+    document.getElementById('res-low').textContent     = d.price_low;
+    document.getElementById('res-high').textContent    = d.price_high;
+    document.getElementById('res-rate').textContent    = d.rate;
+    document.getElementById('res-city').textContent    = d.city;
+    document.getElementById('res-prop').textContent    = d.prop_type;
+    document.getElementById('res-furnish').textContent = d.furnish;
+    document.getElementById('res-tier').textContent    = `${d.city} — ${d.tier_label}`;
+    for (let i = 0; i <= 2; i++) {
+      document.getElementById(`td${i}`).classList.toggle('filled', i <= d.tier);
+    }
+    const sec = document.getElementById('result-section');
+    sec.style.display = 'block';
+    sec.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // ── Toast ──────────────────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3200);
+  }
+
+  // ── Clear errors on type ───────────────────────────────────
+  document.getElementById('sqft').addEventListener('input', () => {
+    document.getElementById('sqft').classList.remove('error');
+    document.getElementById('err-sqft').style.display = 'none';
+  });
+  document.getElementById('beds').addEventListener('input', () => {
+    document.getElementById('err-beds').style.display = 'none';
+  });
+</script>
+
+<!-- Chart.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+  Chart.defaults.color = '#64748b';
+  Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
+  Chart.defaults.font.family = "'DM Sans', sans-serif";
+
+  const YEARS = [2018,2019,2020,2021,2022,2023,2024,2025];
+  const TREND_DATA = {
+    metro: [4200,4600,4500,5100,6200,7400,8300,9100],
+    tier2: [2100,2300,2250,2600,3100,3700,4200,4700],
+    rural: [700,780,760,850,1000,1180,1350,1520],
+  };
+  TREND_DATA.all = YEARS.map((_,i) => Math.round((TREND_DATA.metro[i]+TREND_DATA.tier2[i]+TREND_DATA.rural[i])/3));
+
+  const TIER_META = {
+    all:   { label:'All Tiers Avg', color:'#3b82f6' },
+    metro: { label:'Metro Cities',  color:'#10b981' },
+    tier2: { label:'Tier-2 Cities', color:'#f59e0b' },
+    rural: { label:'Rural / Small', color:'#a78bfa' },
+  };
+
+  let trendChart, typeChart;
+
+  function buildTrendChart(key) {
+    const meta = TIER_META[key];
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    const grad = ctx.createLinearGradient(0,0,0,260);
+    grad.addColorStop(0, meta.color+'30');
+    grad.addColorStop(1, meta.color+'00');
+    if (trendChart) trendChart.destroy();
+    trendChart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: YEARS, datasets: [{ label: meta.label, data: TREND_DATA[key], borderColor: meta.color, backgroundColor: grad, borderWidth: 2.5, pointBackgroundColor: meta.color, pointRadius: 4, pointHoverRadius: 6, fill: true, tension: 0.4 }] },
+      options: { responsive:true, maintainAspectRatio:false,
+        plugins: { legend:{display:false}, tooltip:{ callbacks:{ label: c => ` ₹${c.parsed.y.toLocaleString('en-IN')}/sqft` } } },
+        scales: { x:{grid:{color:'rgba(255,255,255,0.04)'}}, y:{grid:{color:'rgba(255,255,255,0.04)'}, ticks:{callback:v=>'₹'+(v/1000).toFixed(1)+'k'}} }
+      }
+    });
+  }
+
+  function setTrend(key, btn) {
+    btn.closest('.card').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    buildTrendChart(key);
+  }
+
+  const TYPE_DATA = {
+    lakh: { labels:['Apartment','Ind. House','Luxury Villa'], metro:[95,140,380], tier2:[52,78,210], rural:[18,28,90] },
+    sqft: { labels:['Apartment','Ind. House','Luxury Villa'], metro:[8200,7400,10500], tier2:[4300,3900,6200], rural:[1400,1200,2200] }
+  };
+
+  function buildTypeChart(mode) {
+    const d = TYPE_DATA[mode];
+    const ctx2 = document.getElementById('typeChart').getContext('2d');
+    if (typeChart) typeChart.destroy();
+    typeChart = new Chart(ctx2, {
+      type: 'bar',
+      data: { labels: d.labels, datasets: [
+        { label:'Metro',  data:d.metro, backgroundColor:'#3b82f680', borderColor:'#3b82f6', borderWidth:1.5, borderRadius:6 },
+        { label:'Tier-2', data:d.tier2, backgroundColor:'#10b98180', borderColor:'#10b981', borderWidth:1.5, borderRadius:6 },
+        { label:'Rural',  data:d.rural, backgroundColor:'#a78bfa80', borderColor:'#a78bfa', borderWidth:1.5, borderRadius:6 },
+      ]},
+      options: { responsive:true, maintainAspectRatio:false,
+        plugins: { legend:{position:'top',labels:{boxWidth:12,padding:14,font:{size:11}}},
+          tooltip:{ callbacks:{ label: c => mode==='lakh'?` ₹${c.parsed.y}L`:` ₹${c.parsed.y.toLocaleString('en-IN')}/sqft` } }
+        },
+        scales: { x:{grid:{display:false}}, y:{grid:{color:'rgba(255,255,255,0.04)'}, ticks:{callback:v=>mode==='lakh'?'₹'+v+'L':'₹'+(v/1000).toFixed(0)+'k'}} }
+      }
+    });
+  }
+
+  function setTypeChart(mode, btn) {
+    btn.closest('.card').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    buildTypeChart(mode);
+  }
+
+  buildTrendChart('all');
+  buildTypeChart('lakh');
+
+  // ── Comparison Tool ────────────────────────────────────────
+  const TIER_LABELS    = ['Rural','Tier-2','Metro'];
+  const TYPE_LABELS    = ['Apartment','House','Villa'];
+  const FURNISH_LABELS = ['Unfurnished','Semi','Furnished'];
+
+  function clientPredict(sqft, beds, baths, tier, propType, furnish) {
+    // Base rates per sqft by tier (₹)
+    const baseRates = {0:850, 1:3400, 2:7800};
+    const typeMult  = {0:1.0, 1:1.20, 2:1.60};
+    const furnMult  = {0:1.0, 1:1.13, 2:1.28};
+    const price = (sqft * baseRates[tier] * typeMult[propType] * furnMult[furnish]) / 100000;
+    return Math.max(1.5, price);
+  }
+
+  function fmtL(v) { return v >= 100 ? `₹${(v/100).toFixed(2)} Cr` : `₹${v.toFixed(1)} L`; }
+
+  function runComparison() {
+    const get = id => parseFloat(document.getElementById(id).value) || 0;
+    const aS=get('a-sqft')||1200, aB=get('a-beds')||3, aBt=get('a-baths')||2,
+          aT=parseInt(document.getElementById('a-tier').value),
+          aPt=parseInt(document.getElementById('a-type').value),
+          aFn=parseInt(document.getElementById('a-furnish').value);
+    const bS=get('b-sqft')||900, bB=get('b-beds')||2, bBt=get('b-baths')||2,
+          bT=parseInt(document.getElementById('b-tier').value),
+          bPt=parseInt(document.getElementById('b-type').value),
+          bFn=parseInt(document.getElementById('b-furnish').value);
+
+    const pA = clientPredict(aS,aB,aBt,aT,aPt,aFn);
+    const pB = clientPredict(bS,bB,bBt,bT,bPt,bFn);
+    const rA = Math.round((pA*100000)/aS), rB = Math.round((pB*100000)/bS);
+    const winA = pA <= pB;
+
+    document.getElementById('compare-result-grid').innerHTML = `
+      <div class="compare-result-card ${winA?'winner':''}">
+        ${winA?'<span class="winner-badge">Lower Price</span>':''}
+        <div class="c-price">${fmtL(pA)}</div>
+        <div class="c-label">Property A · ${TIER_LABELS[aT]}</div>
+        <div class="compare-stat"><span class="s-label">Area</span><span>${aS.toLocaleString('en-IN')} sqft</span></div>
+        <div class="compare-stat"><span class="s-label">Type</span><span>${TYPE_LABELS[aPt]}</span></div>
+        <div class="compare-stat"><span class="s-label">Furnish</span><span>${FURNISH_LABELS[aFn]}</span></div>
+        <div class="compare-stat"><span class="s-label">₹/sqft</span><span>₹${rA.toLocaleString('en-IN')}</span></div>
+      </div>
+      <div class="compare-result-card ${!winA?'winner':''}">
+        ${!winA?'<span class="winner-badge">Lower Price</span>':''}
+        <div class="c-price">${fmtL(pB)}</div>
+        <div class="c-label">Property B · ${TIER_LABELS[bT]}</div>
+        <div class="compare-stat"><span class="s-label">Area</span><span>${bS.toLocaleString('en-IN')} sqft</span></div>
+        <div class="compare-stat"><span class="s-label">Type</span><span>${TYPE_LABELS[bPt]}</span></div>
+        <div class="compare-stat"><span class="s-label">Furnish</span><span>${FURNISH_LABELS[bFn]}</span></div>
+        <div class="compare-stat"><span class="s-label">₹/sqft</span><span>₹${rB.toLocaleString('en-IN')}</span></div>
+      </div>`;
+
+    const diff = Math.abs(pA-pB), pct = ((diff/Math.max(pA,pB))*100).toFixed(1);
+    document.getElementById('compare-result').insertAdjacentHTML('beforeend',
+      `<div id="compare-insight" style="margin-top:14px;padding:12px 16px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;font-size:13px;color:var(--muted);">
+        <i class="fas fa-lightbulb" style="color:var(--amber);margin-right:6px;"></i>
+        Property ${winA?'A':'B'} is <strong style="color:var(--text)">${fmtL(diff)}</strong> cheaper (<strong style="color:var(--text)">${pct}% less</strong>).
+      </div>`);
+
+    document.getElementById('compare-result').style.display = 'block';
+  }
+
+  // ── Similar Properties ─────────────────────────────────────
+  function showSimilarProperties(data) {
+    const tier = data.tier, sqft = data.sqft, beds = data.beds;
+    const variants = [
+      { sqftD:-100, tierD:0,  typeV:0, furnV:1, tag:'Similar Size'    },
+      { sqftD:+200, tierD:0,  typeV:0, furnV:2, tag:'Larger · FF'     },
+      { sqftD:-150, tierD:0,  typeV:0, furnV:0, tag:'Budget Pick'      },
+      { sqftD:+300, tierD:0,  typeV:1, furnV:1, tag:'More Space'       },
+      { sqftD:0,    tierD:-1, typeV:0, furnV:1, tag:'Nearby · Cheaper' },
+      { sqftD:+400, tierD:0,  typeV:2, furnV:2, tag:'Premium Pick'     },
+    ];
+    const grid = document.getElementById('similar-grid');
+    grid.innerHTML = '';
+    variants.forEach(v => {
+      const s = Math.max(400, sqft + v.sqftD);
+      const t = Math.max(0, Math.min(2, tier + v.tierD));
+      const p = clientPredict(s, Math.max(1,beds), Math.max(1,beds-1), t, v.typeV, v.furnV);
+      const r = Math.round((p*100000)/s);
+      grid.innerHTML += `
+        <div class="sim-card">
+          <span class="sim-tag">${v.tag}</span>
+          <div class="sim-price">${fmtL(p)}</div>
+          <div class="sim-detail">
+            📐 ${s.toLocaleString('en-IN')} sqft<br>
+            📍 ${TIER_LABELS[t]} · ${TYPE_LABELS[v.typeV]}<br>
+            💰 ₹${r.toLocaleString('en-IN')}/sqft
+          </div>
+        </div>`;
+    });
+    document.getElementById('similar-subtitle').textContent = `6 similar listings near ${data.city}`;
+    document.getElementById('similar-section').style.display = 'block';
+  }
+</script>
 </body>
 </html>
-HTMLEOF
-echo "report.html created"
