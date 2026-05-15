@@ -9,10 +9,6 @@ app = Flask(__name__)
 with open('model.pkl', 'rb') as f:
     model = pickle.load(f)
 
-# Market Intelligence Lists
-METROS = ['mumbai', 'delhi', 'bangalore', 'pune', 'indore', 'hyderabad', 'gurgaon', 'noida']
-TIER2 = ['jabalpur', 'bhopal', 'gwalior', 'jaipur', 'lucknow', 'nagpur', 'surat', 'vadodara']
-
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -20,52 +16,42 @@ def home():
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
+        # Inputs from Form
         sqft = float(request.form.get('sqft', 1000))
-        beds = float(request.form.get('beds', 2))
-        baths = float(request.form.get('baths', 2))
-        prop_type = float(request.form.get('prop_type', 0))
-        furnish = float(request.form.get('furnish', 0))
+        dist_cat = int(request.form.get('distance', 0)) # User input: 0 to 4
         lat, lng = request.form.get('lat'), request.form.get('lng')
 
-        tier, multiplier, loc_label, city = 0, 1.0, "Rural/Village", "Point Selected"
+        tier, multiplier, city = 0, 1.0, "Area"
 
+        # Geo-Detection
         if lat and lng:
-            headers = {'User-Agent': 'BharatEstateAI_Pro_v10'}
+            headers = {'User-Agent': 'BharatEstateAI_v11'}
             res = requests.get(f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lng}", headers=headers).json()
-            full_addr = res.get('display_name', '').lower()
-            city = res.get('address', {}).get('city') or res.get('address', {}).get('town') or "Area"
+            addr = res.get('display_name', '').lower()
+            city = res.get('address', {}).get('city') or res.get('address', {}).get('town') or "Location"
 
-            # Intelligence logic to force price separation
-            if any(c in full_addr for c in METROS):
-                tier, multiplier, loc_label = 2, 1.85, "High-Value Metro"
-            elif any(c in full_addr for c in TIER2):
-                tier, multiplier, loc_label = 1, 1.25, "Urban City Zone"
-            
-            # Additional Highway Boost
-            if any(k in full_addr for k in ['highway', 'nh', 'bypass', 'expressway']):
-                multiplier += 0.20
-                loc_label += " (Highway Connectivity)"
+            if any(c in addr for c in ['mumbai', 'delhi', 'bangalore', 'pune', 'indore']): tier = 2
+            elif any(c in addr for c in ['jabalpur', 'bhopal', 'gwalior', 'jaipur']): tier = 1
 
-        # Prediction via Polynomial Pipeline
-        features = pd.DataFrame([[sqft, beds, baths, tier, prop_type, furnish]], 
-                                columns=['sqft','beds','baths','tier','type','furnish'])
+        # Distance Multiplier Logic (Based on your data)
+        # 0: Road touch, 1: <500m, 2: 500m-1km, 3: 1-2km, 4: 2km+
+        dist_multipliers = {0: 1.0, 1: 0.85, 2: 0.75, 3: 0.60, 4: 0.40}
+        penalty = dist_multipliers.get(dist_cat, 0.5)
+
+        # AI Prediction
+        features = pd.DataFrame([[sqft, tier, dist_cat, 0]], columns=['sqft','tier','dist','type'])
+        base_val = model.predict(features)[0]
         
-        base_prediction = model.predict(features)[0]
+        final_val = base_val * penalty
         
-        # Applying the Locality Intelligence Multiplier
-        final_price = max(base_prediction * multiplier, 8.5)
-
-        # Safety: Forced minimum for Metros (2026 inflation)
-        if tier == 2: final_price = max(final_price, 45.0) 
+        # Hard Floors for Cities
+        if tier == 2: final_val = max(final_val, 45.0)
+        elif tier == 1: final_val = max(final_val, 25.0)
 
         return jsonify({
-            'price': f"₹{final_price/100:.2f} Cr" if final_price >= 100 else f"₹{final_price:.1f} L",
-            'rate': f"₹{int((final_price * 100000) / sqft):,}/sqft",
-            'city': city.title(),
-            'loc_tag': loc_label
+            'price': f"₹{final_val/100:.2f} Cr" if final_val >= 100 else f"₹{final_val:.1f} L",
+            'rate': f"₹{int((final_val * 100000) / sqft):,}/sqft",
+            'city': city.title()
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-if __name__ == '__main__':
-    app.run(debug=True)

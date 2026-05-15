@@ -2,73 +2,47 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Bharat Estate AI | Professional Dashboard</title>
+    <title>Bharat Estate AI | Pro Valuator</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;800&family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        :root { --accent: #6366f1; --bg: #030712; --card: #0f172a; --text: #f8fafc; }
-        body { margin:0; font-family:'Outfit', sans-serif; background:var(--bg); color:var(--text); display:flex; height:100vh; overflow:hidden; }
-        
-        /* Glassmorphism Sidebar */
-        .sidebar { width: 440px; background:var(--card); border-right: 1px solid #1e293b; padding:40px; display:flex; flex-direction:column; z-index:100; box-shadow: 20px 0 60px rgba(0,0,0,0.6); overflow-y:auto; }
-        .logo { font-family:'Syne', sans-serif; font-size: 26px; font-weight: 800; color: var(--accent); margin-bottom: 35px; display:flex; align-items:center; gap:12px; }
-        
-        .search-container { background:#1e293b; border:1px solid #334155; border-radius:14px; display:flex; padding:6px; margin-bottom:30px; }
-        #cityIn { background:transparent; border:none; color:white; padding:10px; flex:1; outline:none; }
-        
-        .field-label { font-size:11px; text-transform:uppercase; letter-spacing:1.5px; color:#64748b; font-weight:700; margin-bottom:8px; display:block; }
-        input[type="number"], select { width:100%; padding:14px; margin-bottom:20px; border-radius:12px; border:1px solid #334155; background:#1e293b; color:white; box-sizing:border-box; outline:none; font-family:inherit; transition:0.3s; }
-        input:focus { border-color:var(--accent); background:#161e31; }
-        
-        .predict-btn { width:100%; padding:18px; background:linear-gradient(135deg, var(--accent), #8b5cf6); border:none; border-radius:15px; color:white; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:1px; margin-top:10px; transition:0.3s; }
-        .predict-btn:hover { transform:translateY(-3px); box-shadow:0 15px 30px rgba(99,102,241,0.4); }
-
-        #resultPanel { margin-top:35px; padding:25px; border-radius:20px; background:rgba(99,102,241,0.05); border:1px solid rgba(99,102,241,0.2); display:none; animation: slideIn 0.4s ease-out; }
-        .price-val { font-size:42px; font-weight:800; color:#10b981; line-height:1; margin:10px 0; }
-        #map { flex:1; z-index:1; }
-        @keyframes slideIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+        :root { --p: #6366f1; --bg: #05070a; --card: #0f172a; }
+        body { margin:0; font-family:'Outfit', sans-serif; background:var(--bg); color:white; display:flex; height:100vh; }
+        .sidebar { width: 440px; background:var(--card); border-right: 1px solid #1e293b; padding:40px; overflow-y:auto; z-index:100; box-shadow: 20px 0 50px rgba(0,0,0,0.5); }
+        .logo { font-size: 26px; font-weight: 900; color: var(--p); margin-bottom: 40px; }
+        input, select { width:100%; padding:15px; margin-bottom:20px; border-radius:12px; border:1px solid #334155; background:#1e293b; color:white; box-sizing:border-box; outline:none; }
+        .btn { width:100%; padding:18px; background:linear-gradient(135deg, var(--p), #8b5cf6); border:none; border-radius:12px; color:white; font-weight:800; cursor:pointer; }
+        #map { flex-grow:1; }
+        #resPanel { margin-top:30px; padding:20px; background:rgba(99,102,241,0.1); border:1px solid var(--p); border-radius:15px; display:none; }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <div class="logo"><i class="fas fa-layer-group"></i> BHARAT ESTATE AI</div>
-        
-        <div class="search-container">
-            <input type="text" id="cityIn" placeholder="Search City or Locality...">
-            <button onclick="search()" style="background:var(--accent); border:none; color:white; width:45px; height:45px; border-radius:10px; cursor:pointer;"><i class="fas fa-search"></i></button>
-        </div>
+        <div class="logo">BHARAT ESTATE AI</div>
+        <form id="pForm">
+            <input type="text" id="sIn" placeholder="Search Locality..." style="background:#161e31; border-color:var(--p);">
+            <button type="button" onclick="search()" class="btn" style="padding:10px; margin-bottom:25px;">Search</button>
 
-        <form id="priceForm">
-            <span class="field-label">Area & Configuration</span>
-            <input type="number" name="sqft" placeholder="Area in Sq Ft" value="1500">
-            <div style="display:flex; gap:15px;">
-                <div style="flex:1"><input type="number" name="beds" placeholder="BHK" value="3"></div>
-                <div style="flex:1"><input type="number" name="baths" placeholder="Baths" value="2"></div>
-            </div>
+            <label style="font-size:11px; color:#64748b;">TOTAL AREA (SQ FT)</label>
+            <input type="number" name="sqft" value="1200">
 
-            <span class="field-label">Specifications</span>
-            <select name="prop_type">
-                <option value="0">Standard Apartment</option>
-                <option value="1">Independent House</option>
-                <option value="2">Luxury Villa</option>
-            </select>
-            <select name="furnish">
-                <option value="0">Unfurnished</option>
-                <option value="1">Semi-Furnished</option>
-                <option value="2">Fully Furnished</option>
+            <label style="font-size:11px; color:#64748b;">DISTANCE FROM HIGHWAY / MAIN ROAD</label>
+            <select name="distance">
+                <option value="0">Road Touch / Frontage</option>
+                <option value="1">Within 500 meters (5-15% lower)</option>
+                <option value="2">500m to 1km (10-25% lower)</option>
+                <option value="3">1km to 2km (20-40% lower)</option>
+                <option value="4">2km to 5km (40-70% lower)</option>
             </select>
 
             <input type="hidden" id="lat" name="lat">
             <input type="hidden" id="lng" name="lng">
-            <button type="submit" class="predict-btn">Generate Valuation</button>
+            <button type="submit" class="btn">ANALYZE MARKET VALUE</button>
         </form>
-
-        <div id="resultPanel">
-            <div id="resCity" style="color:var(--accent); font-weight:700; font-size:14px;"></div>
-            <div class="price-val" id="resPrice">--</div>
-            <div id="resRate" style="color:#94a3b8; font-size:14px; margin-bottom:15px;"></div>
-            <div id="resTag" style="display:inline-block; padding:6px 12px; background:rgba(245,158,11,0.1); color:#f59e0b; border-radius:8px; font-size:12px; font-weight:700;"></div>
+        <div id="resPanel">
+            <div id="resCity" style="color:var(--p); font-weight:700;"></div>
+            <div id="resPrice" style="font-size:36px; font-weight:900; color:#10b981;"></div>
+            <div id="resRate" style="font-size:14px; opacity:0.6;"></div>
         </div>
     </div>
     <div id="map"></div>
@@ -80,35 +54,27 @@
         var marker;
 
         function search() {
-            var q = document.getElementById('cityIn').value;
-            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&countrycodes=in&limit=1`, { headers: {'User-Agent': 'ProEstateAI'} })
-            .then(r => r.json()).then(d => { if(d.length > 0) { map.flyTo([d[0].lat, d[0].lon], 15); updateMarker(d[0].lat, d[0].lon); } });
+            var q = document.getElementById('sIn').value;
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&countrycodes=in&limit=1`).then(r => r.json())
+            .then(d => { if(d.length > 0) { map.flyTo([d[0].lat, d[0].lon], 15); updateM(d[0].lat, d[0].lon); } });
         }
 
-        function updateMarker(lat, lng) {
+        function updateM(lat, lng) {
             if(marker) map.removeLayer(marker);
             marker = L.marker([lat, lng], {draggable:true}).addTo(map);
             document.getElementById('lat').value = lat; document.getElementById('lng').value = lng;
         }
 
-        map.on('click', function(e) { updateMarker(e.latlng.lat, e.latlng.lng); });
+        map.on('click', function(e) { updateM(e.latlng.lat, e.latlng.lng); });
 
-        document.getElementById('priceForm').onsubmit = async (e) => {
+        document.getElementById('pForm').onsubmit = async (e) => {
             e.preventDefault();
-            if(!document.getElementById('lat').value) return alert("📍 Mark a location on the map!");
-            
-            const btn = document.querySelector('.predict-btn');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AI Analyzing...';
-            
             const res = await fetch('/predict', { method: 'POST', body: new FormData(e.target) });
             const data = await res.json();
-
-            document.getElementById('resultPanel').style.display = 'block';
+            document.getElementById('resPanel').style.display = 'block';
             document.getElementById('resPrice').innerText = data.price;
             document.getElementById('resCity').innerText = data.city;
-            document.getElementById('resRate').innerText = "Est. Rate: " + data.rate;
-            document.getElementById('resTag').innerText = data.loc_tag;
-            btn.innerHTML = 'Generate Valuation';
+            document.getElementById('resRate').innerText = "Rate: " + data.rate;
         };
     </script>
 </body>
