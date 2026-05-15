@@ -9,9 +9,9 @@ app = Flask(__name__)
 with open('model.pkl', 'rb') as f:
     model = pickle.load(f)
 
-# 2026 Market Intelligence
-PRIME = ['mumbai', 'delhi', 'bangalore', 'indore', 'pune', 'gurgaon', 'hyderabad']
-STANDARD = ['jabalpur', 'bhopal', 'gwalior', 'jaipur', 'lucknow', 'nagpur', 'surat']
+# Market Intelligence Lists
+METROS = ['mumbai', 'delhi', 'bangalore', 'pune', 'indore', 'hyderabad', 'gurgaon', 'noida']
+TIER2 = ['jabalpur', 'bhopal', 'gwalior', 'jaipur', 'lucknow', 'nagpur', 'surat', 'vadodara']
 
 @app.route('/')
 def home():
@@ -20,47 +20,52 @@ def home():
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-        # 1. Gather Inputs
-        sqft = float(request.form.get('sqft', 1200))
+        sqft = float(request.form.get('sqft', 1000))
         beds = float(request.form.get('beds', 2))
         baths = float(request.form.get('baths', 2))
         prop_type = float(request.form.get('prop_type', 0))
         furnish = float(request.form.get('furnish', 0))
         lat, lng = request.form.get('lat'), request.form.get('lng')
 
-        tier, multiplier, loc_tag, city = 0, 1.0, "Residential", "Unknown"
+        tier, multiplier, loc_label, city = 0, 1.0, "Rural/Village", "Point Selected"
 
-        # 2. Geospatial Intelligence
         if lat and lng:
-            headers = {'User-Agent': 'BharatEstateAI_Pro_v9'}
+            headers = {'User-Agent': 'BharatEstateAI_Pro_v10'}
             res = requests.get(f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lng}", headers=headers).json()
             full_addr = res.get('display_name', '').lower()
             city = res.get('address', {}).get('city') or res.get('address', {}).get('town') or "Area"
 
-            if any(c in full_addr for c in PRIME):
-                tier, multiplier, loc_tag = 2, 1.35, "High-Value Metro"
-            elif any(c in full_addr for c in STANDARD):
-                tier, multiplier, loc_tag = 1, 1.15, "Urban Growth Center"
+            # Intelligence logic to force price separation
+            if any(c in full_addr for c in METROS):
+                tier, multiplier, loc_label = 2, 1.85, "High-Value Metro"
+            elif any(c in full_addr for c in TIER2):
+                tier, multiplier, loc_label = 1, 1.25, "Urban City Zone"
             
-            # Logic: Highway Proximity Boost
+            # Additional Highway Boost
             if any(k in full_addr for k in ['highway', 'nh', 'bypass', 'expressway']):
-                multiplier += 0.15
-                loc_tag += " + Highway Access"
+                multiplier += 0.20
+                loc_label += " (Highway Connectivity)"
 
-        # 3. Model Inference
+        # Prediction via Polynomial Pipeline
         features = pd.DataFrame([[sqft, beds, baths, tier, prop_type, furnish]], 
                                 columns=['sqft','beds','baths','tier','type','furnish'])
-        prediction = model.predict(features)[0]
         
-        final_price = max(prediction * multiplier, 10.0) # Market Floor
+        base_prediction = model.predict(features)[0]
+        
+        # Applying the Locality Intelligence Multiplier
+        final_price = max(base_prediction * multiplier, 8.5)
 
-        # 4. JSON Response for AJAX
+        # Safety: Forced minimum for Metros (2026 inflation)
+        if tier == 2: final_price = max(final_price, 45.0) 
+
         return jsonify({
-            'price': f"₹{final_price/100:.2f} Cr" if final_price >= 100 else f"₹{final_val:.1f} L" if 'final_val' in locals() else f"₹{final_price:.1f} L",
+            'price': f"₹{final_price/100:.2f} Cr" if final_price >= 100 else f"₹{final_price:.1f} L",
             'rate': f"₹{int((final_price * 100000) / sqft):,}/sqft",
             'city': city.title(),
-            'loc_tag': loc_tag,
-            'tier': tier
+            'loc_tag': loc_label
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True)

@@ -1,34 +1,35 @@
 import pandas as pd
+import numpy as np
 from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 from sklearn.pipeline import Pipeline
 import pickle
 
-# 2026 Professional Dataset - High-Density Samples
+# 2026 Realistic Indian Market Data (Extreme Gaps)
+# tier: 0 (Rural), 1 (Tier-2), 2 (Metro)
 data = {
-    'sqft':   [700, 1000, 1200, 1500, 2000, 2500, 3500, 700, 1200, 2000, 3000, 700, 1200, 2500, 4000],
-    'beds':   [1,   2,    2,    3,    3,    4,    5,    1,   2,    3,    4,    1,   3,    4,    6],
-    'baths':  [1,   1,    2,    2,    2,    3,    4,    1,   2,    2,    3,    1,   2,    3,    5],
-    'tier':   [0,   0,    0,    0,    0,    0,    0,    1,   1,    1,    1,    2,   2,    2,    2],
-    'type':   [0,   0,    0,    1,    1,    1,    2,    0,   1,    1,    2,    0,   1,    2,    2],
-    'furnish':[0,   1,    1,    1,    1,    2,    2,    1,   1,    1,    2,    2,    2,    2,    2],
-    # Prices (₹ Lakhs) - Forced clear separation for Linear Regression
-    'price':  [15,  22,   30,   45,   65,   85,   140,  45,  78,   120,  210,  95,  180,  450,  1250]
+    'sqft':   [800, 1500, 3000, 800, 1500, 3000, 800, 1500, 3000, 5000],
+    'beds':   [2,   3,    4,    2,   3,    4,    2,   3,    4,    5],
+    'baths':  [1,   2,    3,    1,   2,    3,    2,   2,    3,    5],
+    'tier':   [0,   0,    0,    1,   1,    1,    2,   2,    2,    2],
+    'type':   [0,   0,    1,    0,   1,    1,    0,   1,    2,    2],
+    'furnish':[0,   1,    1,    1,   1,    1,    1,   2,    2,    2],
+    # PRICES (₹ Lakhs) - Forced clear mathematical separation
+    'price':  [12,  22,   45,   45,  85,   170,  95,  210,  650,  1800] 
 }
 
 df = pd.DataFrame(data)
-X = df.drop('price', axis=1)
-y = df['price']
 
-# Professional Pipeline with Feature Scaling
+# Advanced Pipeline: Scaling + Polynomial Features + Regression
 model_pipeline = Pipeline([
     ('scaler', StandardScaler()),
+    ('poly', PolynomialFeatures(degree=2)), # Allows non-linear price jumps
     ('lr', LinearRegression())
 ])
 
-model_pipeline.fit(X, y)
+model_pipeline.fit(df.drop('price', axis=1), df['price'])
 
 with open('model.pkl', 'wb') as f:
     pickle.dump(model_pipeline, f)
 
-print("✅ Professional Brain Initialized.")
+print("✅ BRAIN UPDATED: Non-linear price scaling active.")
