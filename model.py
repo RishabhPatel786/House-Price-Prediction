@@ -4,24 +4,23 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 import pickle
 
-# Calibrated 2026 Dataset - High Variance for Location
-# tier: 0 (Rural), 1 (City), 2 (Metro)
+# 2026 Professional Dataset - High-Density Samples
 data = {
-    'sqft':   [700, 1200, 2500, 700, 1200, 2500, 700, 1200, 2500, 1500, 4000],
-    'beds':   [2,   3,    4,    2,   3,    4,    2,   3,    4,    3,    5],
-    'baths':  [1,   2,    3,    2,   2,    3,    2,   3,    3,    3,    5],
-    'tier':   [0,   0,    0,    1,   1,    1,    2,   2,    2,    1,    2],
-    'type':   [0,   0,    1,    0,   0,    1,    0,   1,    2,    1,    2],
-    'furnish':[0,   1,    1,    1,   1,    1,    1,   2,    2,    1,    2],
-    # Aggressive pricing gaps (in Lakhs) to force the model to learn locality impact
-    'price':  [12,  24,   45,   48,  82,   165,  115, 240,  650,  110,  1200]
+    'sqft':   [700, 1000, 1200, 1500, 2000, 2500, 3500, 700, 1200, 2000, 3000, 700, 1200, 2500, 4000],
+    'beds':   [1,   2,    2,    3,    3,    4,    5,    1,   2,    3,    4,    1,   3,    4,    6],
+    'baths':  [1,   1,    2,    2,    2,    3,    4,    1,   2,    2,    3,    1,   2,    3,    5],
+    'tier':   [0,   0,    0,    0,    0,    0,    0,    1,   1,    1,    1,    2,   2,    2,    2],
+    'type':   [0,   0,    0,    1,    1,    1,    2,    0,   1,    1,    2,    0,   1,    2,    2],
+    'furnish':[0,   1,    1,    1,    1,    2,    2,    1,   1,    1,    2,    2,    2,    2,    2],
+    # Prices (₹ Lakhs) - Forced clear separation for Linear Regression
+    'price':  [15,  22,   30,   45,   65,   85,   140,  45,  78,   120,  210,  95,  180,  450,  1250]
 }
 
 df = pd.DataFrame(data)
 X = df.drop('price', axis=1)
 y = df['price']
 
-# Pipeline ensures Tier and Sqft are analyzed on the same mathematical scale
+# Professional Pipeline with Feature Scaling
 model_pipeline = Pipeline([
     ('scaler', StandardScaler()),
     ('lr', LinearRegression())
@@ -32,4 +31,4 @@ model_pipeline.fit(X, y)
 with open('model.pkl', 'wb') as f:
     pickle.dump(model_pipeline, f)
 
-print("✅ BRAIN RECALIBRATED: Locality weight increased.")
+print("✅ Professional Brain Initialized.")
